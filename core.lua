@@ -322,8 +322,8 @@
     	return fo
     end
 
-	--[[
-	
+	--[[ Creates a StatusBar with border and text
+		FRAME CreateStatusBar(FRAME parent)
 	]]
 	lib.CreateStatusBar = function(parent)
 		local tmp = CreateFrame('StatusBar', nil, parent)
@@ -590,8 +590,8 @@
 		end
 	end
 
-	--[[
-	
+	--[[ Displays the DigSites in the TaxiMap
+		VOID FindDigSitesOnTaxiMap()
 	]]
 	core.FindDigSitesOnTaxiMap = function()
 		-- lib.debugging('FindDigSitesOnTaxiMap()')
@@ -631,24 +631,27 @@
 
 
 
-	--[[
-	
+	--[[ Shows the frames and registers the events
+		VOID Show()
 	]]
 	ctrl.Show = function()
 		PredatorArchyOptions.state = true
+		core.BuildInfoTable()
+		PredatorArchyArtifacts:Show()
+		PredatorArchyDigSites:Show()
+		core.UpdateProject()
+		core.UpdateArtifactWindow()
+		core.FindDigSiteOnContinent()
+
 		PredatorArchy:RegisterEvent('CHAT_MSG_CURRENCY')
 		PredatorArchy:RegisterEvent('ARTIFACT_UPDATE')
 		PredatorArchy:RegisterEvent('ARTIFACT_DIG_SITE_UPDATED')
 		PredatorArchy:RegisterEvent('ZONE_CHANGED_NEW_AREA')
 		PredatorArchy:RegisterEvent('TAXIMAP_OPENED')
-		PredatorArchyArtifacts:Show()
-		PredatorArchyDigSites:Show()
-		core.UpdateProject()
-		core.UpdateArtifactWindow()
 	end
 
-	--[[
-	
+	--[[ Hides the frames
+		VOID Hide()
 	]]
 	ctrl.Hide = function()
 		PredatorArchyOptions.state = false
@@ -656,8 +659,8 @@
 		PredatorArchyDigSites:Hide()
 	end
 
-	--[[
-	
+	--[[ Sends the addon to sleep and unregisters the events
+		VOID Sleep()
 	]]
 	ctrl.Sleep = function()
 		PredatorArchyOptions.state = false
@@ -670,8 +673,9 @@
 		ctrl.Hide()
 	end
 
-	--[[
-	
+	--[[ Resets all settings to default
+		VOID Reset()
+		Yes, default-values are here!
 	]]
 	ctrl.Reset = function()
 		PredatorArchyOptions = {}
@@ -698,8 +702,9 @@
 		PredatorArchyDigSites:SetPoint(PredatorArchyOptions['PredatorArchyDigSites'].point, UIParent, PredatorArchyOptions['PredatorArchyDigSites'].relPoint, PredatorArchyOptions['PredatorArchyDigSites'].x, PredatorArchyOptions['PredatorArchyDigSites'].y)
 	end
 
-	--[[
-	
+	--[[ Controls what happens while using a slash-command
+		VOID SlashCmdHandler(STRING msg, EDITBOX editbox)
+		Remember that the SlashCmds are '/predatorarchy' and '/pa'
 	]]
 	ctrl.SlashCmdHandler = function(msg, editbox)
 		local cmd, param = msg:match('^(%S*)%s*(.-)$')
@@ -715,7 +720,11 @@
 		elseif ( cmd == 'reset' ) then
 			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
 		else
-			lib.debugging('Help()')
+			lib.debugging('/pa [show | hide | sleep | reset]')
+			lib.debugging('  show - shows the PredatorArchy windows')
+			lib.debugging('  hide - hides the windows')
+			lib.debugging('  sleep - sends the addon to sleep and hides the windows')
+			lib.debugging('  reset - resets the settings')
 		end
 	end
 
@@ -863,6 +872,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		PredatorArchyArtifacts.Skill = lib.CreateStatusBar(PredatorArchyArtifacts)
 		PredatorArchyArtifacts.Skill:SetPoint('TOPLEFT', PredatorArchyArtifacts, 'TOPLEFT', 15, -10)
 		PredatorArchyArtifacts.Skill:SetPoint('RIGHT', PredatorArchyArtifacts, 'RIGHT', -15, 0)
+		PredatorArchyArtifacts.Skill:SetStatusBarColor(0, 0.7, 0)
 		PredatorArchyArtifacts.Skill.text:ClearAllPoints()
 		PredatorArchyArtifacts.Skill.text:SetPoint('CENTER', 0, 1)
 		PredatorArchyArtifacts.Skill.text:SetJustifyH('CENTER')
@@ -1046,7 +1056,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		end)
 
 		tmp.ModeDropDown = CreateFrame('Button', 'PredatorArchyMenuModeDropDown', tmp, 'UIDropDownMenuTemplate')
-		tmp.ModeDropDown:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 0, -20)
+		tmp.ModeDropDown:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 0, -50)
 		tmp.ModeDropDown:SetScript('OnShow', function(self)
 			UIDropDownMenu_Initialize(self, function()
 				local info = {}
