@@ -8,6 +8,7 @@
 	local font = [[Interface\AddOns\PredatorArchy\media\accid__.ttf]]
 	local artifactsWidth = 300
 	local artifactsLineHeight = 28
+	local digSitesWidth = 200
 	local texts = {
 		['noskill'] = 'no archaeology skill detected!',
 		['notavailable'] = 'not available',
@@ -337,7 +338,7 @@
 		tmp.tex['back']:SetVertexColor(0.3, 0.3, 0.3, 1)
 
 		tmp.text = lib.CreateFontObject(tmp, 14, font)
-		tmp.text:SetPoint('LEFT', 10, 1)
+		tmp.text:SetPoint('LEFT', 5, 1)
 		tmp.text:SetPoint('RIGHT', -15)
 		tmp.text:SetJustifyH('LEFT')
 		tmp.text:SetText('INIT')
@@ -424,6 +425,7 @@
 				( PredatorArchyOptions.mode == texts.mode_all ) )
 			) then
 				line.race = race
+				line:SetID(infoTable[race].ID)
 
 				line.RaceButton.tex:SetTexture(infoTable[race].tex)
 				line.ArtifactIcon.tex['icon']:SetTexture(infoTable[race].artifactIcon or nil)
@@ -522,6 +524,7 @@
 				['keystoneID'] = raceKeystoneID,
 				['frags'] = raceFrags or 0,
 				['artifactFragsTotal'] = raceFragsNeed or 0,
+				['ID'] = i
 			}
 			artifactName, _, artifactRarity, artifactIcon, artifactDesc, artifactKeystoneCount = GetActiveArtifactByRace(i)
 			if ( artifactName ) then
@@ -576,7 +579,7 @@
 					if ( digSiteRaceTable[blobID] ) then
 						PredatorArchyDigSites.Lines[line].tex:SetTexture(infoTable[raceIDNameTable[digSiteRaceTable[blobID]]].tex)
 						PredatorArchyDigSites.Lines[line].text:SetText(zname)
-						PredatorArchyDigSites.Lines[line].id = zid
+						PredatorArchyDigSites.Lines[line]:SetID(zid)
 					else
 						PredatorArchyDigSites.Lines[line].tex:SetTexture()
 						PredatorArchyDigSites.Lines[line].text:SetText('MISSING: '..blobID)
@@ -632,6 +635,7 @@
 	
 	]]
 	ctrl.Show = function()
+		PredatorArchyOptions.state = true
 		PredatorArchy:RegisterEvent('CHAT_MSG_CURRENCY')
 		PredatorArchy:RegisterEvent('ARTIFACT_UPDATE')
 		PredatorArchy:RegisterEvent('ARTIFACT_DIG_SITE_UPDATED')
@@ -647,6 +651,7 @@
 	
 	]]
 	ctrl.Hide = function()
+		PredatorArchyOptions.state = false
 		PredatorArchyArtifacts:Hide()
 		PredatorArchyDigSites:Hide()
 	end
@@ -655,6 +660,7 @@
 	
 	]]
 	ctrl.Sleep = function()
+		PredatorArchyOptions.state = false
 		PredatorArchy:UnregisterEvent('PLAYER_ALIVE')
 		PredatorArchy:UnregisterEvent('CHAT_MSG_CURRENCY')
 		PredatorArchy:UnregisterEvent('ARTIFACT_UPDATE')
@@ -673,6 +679,12 @@
 		PredatorArchyOptions.mode = texts.mode_all
 		PredatorArchyOptions.customMode = {}
 		PredatorArchyOptions.PredatorArchyArtifacts = {
+			['point'] = 'CENTER', 
+			['relPoint'] = 'CENTER', 
+			['x'] = 0,
+			['y'] = 0
+		}
+		PredatorArchyOptions.PredatorArchyDigSites = {
 			['point'] = 'CENTER', 
 			['relPoint'] = 'CENTER', 
 			['x'] = 0,
@@ -720,60 +732,6 @@ PredatorArchy:SetScript('OnEvent', function(self)
 	end
 
 	local tmp
-
-	-- build the dig site frame
-	if ( not PredatorArchyDigSites ) then
-		if ( not PredatorArchyOptions['PredatorArchyDigSites'] ) then
-			PredatorArchyOptions['PredatorArchyDigSites'] = {}
-		end
-		tmp = CreateFrame('Frame', 'PredatorArchyDigSites', UIParent)
-		tmp:SetBackdrop( {
-					bgFile = solidTex,
-					edgeFile = borderTex,
-					tile = false, 
-					edgeSize = 8,
-					insets = { left = 4, right = 4, top = 4, bottom = 4 }
-			} )
-		tmp:SetBackdropColor(0, 0, 0, 0.7)
-		tmp:SetWidth(200)
-		tmp:SetHeight(140)
-		tmp:EnableMouse(true)
-		tmp:SetMovable(true)
-		tmp:RegisterForDrag('LeftButton')
-		tmp:SetScript("OnDragStart", function(self) if IsAltKeyDown() then self:StartMoving() end end)
-		tmp:SetScript("OnDragStop", function(self)
-			self:StopMovingOrSizing()
-			local point, _, relPoint, x, y = self:GetPoint(1)
-			PredatorArchyOptions['PredatorArchyDigSites'].point = point
-			PredatorArchyOptions['PredatorArchyDigSites'].relPoint = relPoint
-			PredatorArchyOptions['PredatorArchyDigSites'].x = x
-			PredatorArchyOptions['PredatorArchyDigSites'].y = y
-		end)
-		tmp:ClearAllPoints()
-		tmp:SetPoint(PredatorArchyOptions['PredatorArchyDigSites'].point or 'CENTER', UIParent, PredatorArchyOptions['PredatorArchyDigSites'].relPoint or 'CENTER', PredatorArchyOptions['PredatorArchyDigSites'].x or 0, PredatorArchyOptions['PredatorArchyDigSites'].y or 0)
-		PredatorArchyDigSites = tmp
-
-		PredatorArchyDigSites.Lines = {}
-		for i = 1, 4 do
-			tmp = CreateFrame('Button', nil, PredatorArchyDigSites)
-			tmp:SetPoint('TOPLEFT', PredatorArchyDigSites, 'TOPLEFT', 15, -(i*26))
-			tmp:SetPoint('RIGHT', PredatorArchyDigSites, 'RIGHT', -10, 0)
-			tmp:SetHeight(24)
-			tmp.tex = tmp:CreateTexture(nil, 'OVERLAY')
-			tmp.tex:SetSize(24, 24)
-			tmp.tex:SetTexCoord(0, 0.6, 0, 0.6)
-			tmp.tex:SetPoint('TOPLEFT', tmp)
-			tmp.text = lib.CreateFontObject(tmp, 14, font)
-			tmp.text:SetPoint('TOPLEFT', tmp.tex, 'TOPRIGHT', 5, -6)
-			tmp.text:SetPoint('RIGHT', tmp)
-			tmp.text:SetText('Init')
-			tmp:SetScript('OnClick', function(self)
-				SetMapByID(self.id)
-				WorldMapFrame:Show()
-			end)
-			PredatorArchyDigSites.Lines[i] = tmp
-		end
-	end
 
 	-- build the menu
 	do
@@ -999,7 +957,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		SAVED VARIABLES
 	]]
 	if ( not PredatorArchyOptions ) then
-		ResetOptions()
+		ctrl.Reset()
 	else
 		if ( not PredatorArchyOptions.state ) then
 			PredatorArchyOptions.state = true
@@ -1012,6 +970,14 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		end
 		if ( not PredatorArchyOptions.PredatorArchyArtifacts ) then
 			PredatorArchyOptions.PredatorArchyArtifacts = {
+				['point'] = 'CENTER', 
+				['relPoint'] = 'CENTER', 
+				['x'] = 0,
+				['y'] = 0
+			}
+		end
+		if ( not PredatorArchyOptions.PredatorArchyDigSites ) then
+			PredatorArchyOptions.PredatorArchyDigSites = {
 				['point'] = 'CENTER', 
 				['relPoint'] = 'CENTER', 
 				['x'] = 0,
@@ -1087,6 +1053,10 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			tmp:SetScript('OnLeave', function()
 				GameTooltip:Hide()
 			end)
+			tmp:SetScript('OnClick', function(self)
+				ArchaeologyFrame_Show()
+				ArchaeologyFrame_ShowArtifact(self:GetParent():GetID())
+			end)
 			PredatorArchyArtifacts.Lines[i].RaceButton = tmp
 
 			-- Artifact Icon
@@ -1129,7 +1099,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 				GameTooltip:Hide()
 			end)
 			tmp:SetScript('OnClick', function(self)
-				core.SolveArtifact(self.race)
+				core.SolveArtifact(self:GetParent().race)
 			end)
 			PredatorArchyArtifacts.Lines[i].ArtifactIcon = tmp
 
@@ -1139,6 +1109,69 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			tmp:SetPoint('RIGHT', PredatorArchyArtifacts.Lines[i].ArtifactIcon, 'LEFT', -7, 0)
 			PredatorArchyArtifacts.Lines[i].Bar = tmp
 		end
-
 	end
+
+	--[[
+		PREDATOR ARCHY DIG SITES
+	]]
+	if ( not PredatorArchyDigSites ) then
+		PredatorArchyDigSites = CreateFrame('Frame', 'PredatorArchyDigSites', UIParent)
+		PredatorArchyDigSites:SetBackdrop( {
+			bgFile = solidTex,
+			edgeFile = borderTex,
+			tile = false,
+			edgeSize = 8,
+			insets = { left = 4, right = 4, top = 4, bottom = 4 }
+		} )
+		PredatorArchyDigSites:SetBackdropColor(0, 0, 0, 0.7)
+		PredatorArchyDigSites:SetWidth(digSitesWidth)
+		PredatorArchyDigSites:SetHeight(122)
+		PredatorArchyDigSites:EnableMouse(true)
+		PredatorArchyDigSites:SetMovable(true)
+		PredatorArchyDigSites:RegisterForDrag('LeftButton')
+		PredatorArchyDigSites:SetScript('OnDragStart', function(self)
+			if ( IsAltKeyDown() ) then
+				self:StartMoving()
+			end
+		end)
+		PredatorArchyDigSites:SetScript('OnDragStop', function(self)
+			self:StopMovingOrSizing()
+			local point, _, relPoint, x, y = self:GetPoint(1)
+			PredatorArchyOptions['PredatorArchyDigSites'].point = point
+			PredatorArchyOptions['PredatorArchyDigSites'].relPoint = relPoint
+			PredatorArchyOptions['PredatorArchyDigSites'].x = x
+			PredatorArchyOptions['PredatorArchyDigSites'].y = y
+		end)
+		PredatorArchyDigSites:ClearAllPoints()
+		PredatorArchyDigSites:SetPoint(PredatorArchyOptions['PredatorArchyDigSites'].point, UIParent, PredatorArchyOptions['PredatorArchyDigSites'].relPoint, PredatorArchyOptions['PredatorArchyDigSites'].x, PredatorArchyOptions['PredatorArchyDigSites'].y)
+
+		PredatorArchyDigSites.Lines = {}
+		for i = 1, 4 do
+			tmp = CreateFrame('Button', nil, PredatorArchyDigSites)
+			tmp:SetHeight(26)
+			if ( i == 1 ) then
+				tmp:SetPoint('TOPLEFT', PredatorArchyDigSites, 'TOPLEFT', 10, -10)
+			else
+				tmp:SetPoint('TOPLEFT', PredatorArchyDigSites.Lines[i-1], 'BOTTOMLEFT')
+			end
+			tmp:SetPoint('RIGHT', PredatorArchyDigSites, 'RIGHT', -10, 0)
+
+			tmp.tex = tmp:CreateTexture(nil, 'OVERLAY')
+			tmp.tex:SetSize(24, 24)
+			tmp.tex:SetTexCoord(0, 0.6, 0, 0.6)
+			tmp.tex:SetPoint('TOPLEFT', tmp)
+			tmp.text = lib.CreateFontObject(tmp, 14, font)
+			tmp.text:SetPoint('TOPLEFT', tmp.tex, 'TOPRIGHT', 5, -6)
+			tmp.text:SetPoint('RIGHT', tmp)
+			tmp.text:SetText('Init')
+			tmp:SetScript('OnClick', function(self)
+				ShowUIPanel(WorldMapFrame)
+				SetMapByID(self:GetID())
+				WorldMapFrame.blockWorldMapUpdate = nil
+			end)
+
+			PredatorArchyDigSites.Lines[i] = tmp
+		end
+	end
+
 end)
