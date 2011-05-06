@@ -690,6 +690,12 @@
 			['x'] = 0,
 			['y'] = 0
 		}
+
+		core.UpdateArtifactWindow()
+		PredatorArchyArtifacts:ClearAllPoints()
+		PredatorArchyArtifacts:SetPoint(PredatorArchyOptions['PredatorArchyArtifacts'].point, UIParent, PredatorArchyOptions['PredatorArchyArtifacts'].relPoint, PredatorArchyOptions['PredatorArchyArtifacts'].x, PredatorArchyOptions['PredatorArchyArtifacts'].y)
+		PredatorArchyDigSites:ClearAllPoints()
+		PredatorArchyDigSites:SetPoint(PredatorArchyOptions['PredatorArchyDigSites'].point, UIParent, PredatorArchyOptions['PredatorArchyDigSites'].relPoint, PredatorArchyOptions['PredatorArchyDigSites'].x, PredatorArchyOptions['PredatorArchyDigSites'].y)
 	end
 
 	--[[
@@ -707,7 +713,6 @@
 			lib.debugging('Is now sleeping...')
 			ctrl.Sleep()
 		elseif ( cmd == 'reset' ) then
-			lib.debugging('Reset()')
 			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
 		else
 			lib.debugging('Help()')
@@ -731,174 +736,6 @@ PredatorArchy:SetScript('OnEvent', function(self)
 		return
 	end
 
-	local tmp
-
-	-- build the menu
-	do
-		tmp = CreateFrame('Frame', 'PredatorArchyMenu', UIParent)
-		tmp.name = 'PredatorArchy'
-		tmp.title = tmp:CreateFontString(nil, 'ARTWORK', 'GameFontNormalLarge')
-		tmp.title:SetPoint('TOPLEFT', 16, -16)
-		tmp.title:SetText('PredatorArchy')
-
-		tmp.ShowButton = CreateFrame('Button', 'PredatorArchyMenuShowButton', tmp, 'OptionsButtonTemplate')
-		tmp.ShowButton:SetText('Show')
-		tmp.ShowButton:SetPoint('TOPLEFT', tmp.title, 'BOTTOMLEFT', 0, -20)
-		tmp.ShowButton:SetScript('OnClick', ctrl.Show)
-
-		tmp.HideButton = CreateFrame('Button', 'PredatorArchyMenuHideButton', tmp, 'OptionsButtonTemplate')
-		tmp.HideButton:SetText('Hide')
-		tmp.HideButton:SetPoint('TOPLEFT', tmp.ShowButton, 'TOPRIGHT', 5, 0)
-		tmp.HideButton:SetScript('OnClick', ctrl.Hide)
-
-		tmp.SleepButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
-		tmp.SleepButton:SetText('Sleep')
-		tmp.SleepButton:SetPoint('TOPLEFT', tmp.HideButton, 'TOPRIGHT', 5, 0)
-		tmp.SleepButton:SetScript('OnClick', ctrl.Sleep)
-
-		tmp.ResetButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
-		tmp.ResetButton:SetText('Reset')
-		tmp.ResetButton:SetPoint('TOPLEFT', tmp.SleepButton, 'TOPRIGHT', 5, 0)
-		tmp.ResetButton:SetScript('OnClick', function()
-			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
-		end)
-
-		tmp.ModeDropDown = CreateFrame('Button', 'PredatorArchyMenuModeDropDown', tmp, 'UIDropDownMenuTemplate')
-		tmp.ModeDropDown:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 0, -20)
-		tmp.ModeDropDown:SetScript('OnShow', function(self)
-			UIDropDownMenu_Initialize(self, function()
-				local info = {}
-				info.notCheckable = true
-
-				info.text = texts.mode_all
-				info.func = function()
-					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_all)
-					PredatorArchyOptions.mode = texts.mode_all
-					core.UpdateArtifactWindow()
-				end
-				UIDropDownMenu_AddButton(info)
-
-				info.text = texts.mode_artifacts
-				info.func = function()
-					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_artifacts)
-					PredatorArchyOptions.mode = texts.mode_artifacts
-					core.UpdateArtifactWindow()
-				end
-				UIDropDownMenu_AddButton(info)
-
-				info.text = texts.mode_fragments
-				info.func = function()
-					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_fragments)
-					PredatorArchyOptions.mode = texts.mode_fragments
-					core.UpdateArtifactWindow()
-				end
-				UIDropDownMenu_AddButton(info)
-
-				info.text = texts.mode_custom
-				info.func = function()
-					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_custom)
-					PredatorArchyOptions.mode = texts.mode_custom
-					core.UpdateArtifactWindow()
-				end
-				UIDropDownMenu_AddButton(info)
-			end)
-		end)
-
-		tmp.CustomMode = CreateFrame('Frame', nil, tmp)
-		tmp.CustomMode:SetPoint('LEFT', tmp.ShowButton, 'LEFT')
-		tmp.CustomMode:SetPoint('RIGHT', tmp.ResetButton, 'RIGHT')
-		tmp.CustomMode:SetPoint('TOP', tmp.ModeDropDown, 'BOTTOM', 0, -20)
-		tmp.CustomMode:SetHeight(100)
-		tmp.CustomMode.race = {}
-
-		tmp.CustomMode.race[1] = CreateFrame('CheckButton', 'PredatorArchyMenuRace1Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[1]:SetPoint('TOPLEFT', tmp.CustomMode, 'TOPLEFT')
-		tmp.CustomMode.race[1]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[2] = CreateFrame('CheckButton', 'PredatorArchyMenuRace2Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[2]:SetPoint('TOPLEFT', tmp.CustomMode.race[1], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[2]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[3] = CreateFrame('CheckButton', 'PredatorArchyMenuRace3Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[3]:SetPoint('TOPLEFT', tmp.CustomMode.race[2], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[3]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[4] = CreateFrame('CheckButton', 'PredatorArchyMenuRace4Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[4]:SetPoint('TOPLEFT', tmp.CustomMode.race[3], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[4]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[5] = CreateFrame('CheckButton', 'PredatorArchyMenuRace5Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[5]:SetPoint('TOPLEFT', tmp.CustomMode.race[4], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[5]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[6] = CreateFrame('CheckButton', 'PredatorArchyMenuRace6Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[6]:SetPoint('LEFT', tmp.CustomMode, 'CENTER')
-		tmp.CustomMode.race[6]:SetPoint('TOP', tmp.CustomMode.race[1], 'TOP')
-		tmp.CustomMode.race[6]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[7] = CreateFrame('CheckButton', 'PredatorArchyMenuRace7Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[7]:SetPoint('TOPLEFT', tmp.CustomMode.race[6], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[7]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[8] = CreateFrame('CheckButton', 'PredatorArchyMenuRace8Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[8]:SetPoint('TOPLEFT', tmp.CustomMode.race[7], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[8]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[9] = CreateFrame('CheckButton', 'PredatorArchyMenuRace9Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[9]:SetPoint('TOPLEFT', tmp.CustomMode.race[8], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[9]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-		tmp.CustomMode.race[10] = CreateFrame('CheckButton', 'PredatorArchyMenuRace10Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
-		tmp.CustomMode.race[10]:SetPoint('TOPLEFT', tmp.CustomMode.race[9], 'BOTTOMLEFT', 0, -10)
-		tmp.CustomMode.race[10]:SetScript('OnClick', function(self)
-			self:SetChecked((self:GetChecked() and true) or false)
-			PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
-			core.UpdateArtifactWindow()
-		end)
-
-		tmp:SetScript('OnShow', function()
-			local raceName
-			_G['PredatorArchyMenuModeDropDownText']:SetText(PredatorArchyOptions.mode)
-			for i = 1, numArchRaces do
-				raceName = GetArchaeologyRaceInfo(i)
-				_G['PredatorArchyMenuRace'..i..'CheckboxText']:SetText(raceName)
-				_G['PredatorArchyMenuRace'..i..'Checkbox']:SetChecked(PredatorArchyOptions.customMode[raceName] and true or false)
-			end
-		end)
-
-		InterfaceOptions_AddCategory(tmp)
-	end
-
-	SLASH_PREDATORARCHY1, SLASH_PREDATORARCHY2 = '/predatorarchy', '/pa'
-	SlashCmdList['PREDATORARCHY'] = ctrl.SlashCmdHandler
-
 	core.BuildInfoTable()
 
 	core.UpdateArtifactWindow()
@@ -908,13 +745,17 @@ PredatorArchy:SetScript('OnEvent', function(self)
 	core.FindDigSiteOnContinent()
 	
 	-- build the event handler
+	if ( PredatorArchyOptions.state ) then
+		self:RegisterEvent('PLAYER_ALIVE')
+		self:RegisterEvent('CHAT_MSG_CURRENCY')
+		self:RegisterEvent('ARTIFACT_UPDATE')
+		self:RegisterEvent('ARTIFACT_DIG_SITE_UPDATED')
+		self:RegisterEvent('ZONE_CHANGED_NEW_AREA')
+		self:RegisterEvent('TAXIMAP_OPENED')
+		PredatorArchyArtifacts:Show()
+		PredatorArchyDigSites:Show()
+	end
 	self:UnregisterEvent('PLAYER_LOGIN')
-	self:RegisterEvent('PLAYER_ALIVE')
-	self:RegisterEvent('CHAT_MSG_CURRENCY')
-	self:RegisterEvent('ARTIFACT_UPDATE')
-	self:RegisterEvent('ARTIFACT_DIG_SITE_UPDATED')
-	self:RegisterEvent('ZONE_CHANGED_NEW_AREA')
-	self:RegisterEvent('TAXIMAP_OPENED')
 	self:SetScript('OnEvent', function(self, event)
 		-- lib.debugging(event)
 		if ( event == 'PLAYER_ALIVE' ) then
@@ -952,7 +793,6 @@ loader:SetScript('OnEvent', function(self, event, addon)
 
 	local i, tmp
 
-
 	--[[
 		SAVED VARIABLES
 	]]
@@ -960,7 +800,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		ctrl.Reset()
 	else
 		if ( not PredatorArchyOptions.state ) then
-			PredatorArchyOptions.state = true
+			PredatorArchyOptions.state = (PredatorArchyOptions.state and true) or false
 		end
 		if ( not PredatorArchyOptions.mode ) then
 			PredatorArchyOptions.mode = texts.mode_all
@@ -985,7 +825,6 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			}
 		end
 	end
-
 
 	--[[
 		PREDATOR ARCHY ARTIFACTS
@@ -1173,5 +1012,120 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			PredatorArchyDigSites.Lines[i] = tmp
 		end
 	end
+
+	--[[
+		CONFIGURATION WINDOW
+	]]
+	do
+		tmp = CreateFrame('Frame', 'PredatorArchyMenu', UIParent)
+		tmp.name = 'PredatorArchy'
+		tmp.title = tmp:CreateFontString(nil, 'ARTWORK', 'GameFontNormalLarge')
+		tmp.title:SetPoint('TOPLEFT', 16, -16)
+		tmp.title:SetText('PredatorArchy')
+
+		tmp.ShowButton = CreateFrame('Button', 'PredatorArchyMenuShowButton', tmp, 'OptionsButtonTemplate')
+		tmp.ShowButton:SetText('Show')
+		tmp.ShowButton:SetPoint('TOPLEFT', tmp.title, 'BOTTOMLEFT', 0, -20)
+		tmp.ShowButton:SetScript('OnClick', ctrl.Show)
+
+		tmp.HideButton = CreateFrame('Button', 'PredatorArchyMenuHideButton', tmp, 'OptionsButtonTemplate')
+		tmp.HideButton:SetText('Hide')
+		tmp.HideButton:SetPoint('TOPLEFT', tmp.ShowButton, 'TOPRIGHT', 5, 0)
+		tmp.HideButton:SetScript('OnClick', ctrl.Hide)
+
+		tmp.SleepButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
+		tmp.SleepButton:SetText('Sleep')
+		tmp.SleepButton:SetPoint('TOPLEFT', tmp.HideButton, 'TOPRIGHT', 5, 0)
+		tmp.SleepButton:SetScript('OnClick', ctrl.Sleep)
+
+		tmp.ResetButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
+		tmp.ResetButton:SetText('Reset')
+		tmp.ResetButton:SetPoint('TOPLEFT', tmp.SleepButton, 'TOPRIGHT', 5, 0)
+		tmp.ResetButton:SetScript('OnClick', function()
+			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
+		end)
+
+		tmp.ModeDropDown = CreateFrame('Button', 'PredatorArchyMenuModeDropDown', tmp, 'UIDropDownMenuTemplate')
+		tmp.ModeDropDown:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 0, -20)
+		tmp.ModeDropDown:SetScript('OnShow', function(self)
+			UIDropDownMenu_Initialize(self, function()
+				local info = {}
+				info.notCheckable = true
+
+				info.text = texts.mode_all
+				info.func = function()
+					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_all)
+					PredatorArchyOptions.mode = texts.mode_all
+					core.UpdateArtifactWindow()
+				end
+				UIDropDownMenu_AddButton(info)
+
+				info.text = texts.mode_artifacts
+				info.func = function()
+					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_artifacts)
+					PredatorArchyOptions.mode = texts.mode_artifacts
+					core.UpdateArtifactWindow()
+				end
+				UIDropDownMenu_AddButton(info)
+
+				info.text = texts.mode_fragments
+				info.func = function()
+					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_fragments)
+					PredatorArchyOptions.mode = texts.mode_fragments
+					core.UpdateArtifactWindow()
+				end
+				UIDropDownMenu_AddButton(info)
+
+				info.text = texts.mode_custom
+				info.func = function()
+					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_custom)
+					PredatorArchyOptions.mode = texts.mode_custom
+					core.UpdateArtifactWindow()
+				end
+				UIDropDownMenu_AddButton(info)
+			end)
+		end)
+
+		tmp.CustomMode = CreateFrame('Frame', nil, tmp)
+		tmp.CustomMode:SetPoint('LEFT', tmp.ShowButton, 'LEFT', 10, 0)
+		tmp.CustomMode:SetPoint('RIGHT', tmp.ResetButton, 'RIGHT')
+		tmp.CustomMode:SetPoint('TOP', tmp.ModeDropDown, 'BOTTOM', 0, -20)
+		tmp.CustomMode:SetHeight(100)
+		tmp.CustomMode.race = {}
+		for i = 1, numArchRaces do
+			tmp.CustomMode.race[i] = CreateFrame('CheckButton', 'PredatorArchyMenuRace'..i..'Checkbox', tmp.CustomMode, 'InterfaceOptionsCheckButtonTemplate')
+			if ( i == 1 ) then
+				tmp.CustomMode.race[i]:SetPoint('TOPLEFT', tmp.CustomMode, 'TOPLEFT')
+			elseif ( i == 6 ) then
+				tmp.CustomMode.race[i]:SetPoint('LEFT', tmp.CustomMode, 'CENTER')
+				tmp.CustomMode.race[6]:SetPoint('TOP', tmp.CustomMode.race[1], 'TOP')
+			else
+				tmp.CustomMode.race[i]:SetPoint('TOPLEFT', tmp.CustomMode.race[i-1], 'BOTTOMLEFT', 0, -10)
+			end
+			tmp.CustomMode.race[i]:SetScript('OnClick', function(self)
+				self:SetChecked((self:GetChecked() and true) or false)
+				PredatorArchyOptions.customMode[_G[self:GetName()..'Text']:GetText()] = (self:GetChecked() and true or false)
+				core.UpdateArtifactWindow()
+			end)
+		end
+
+		tmp:SetScript('OnShow', function()
+			local raceName
+			_G['PredatorArchyMenuModeDropDownText']:SetText(PredatorArchyOptions.mode)
+			for i = 1, numArchRaces do
+				raceName = GetArchaeologyRaceInfo(i)
+				_G['PredatorArchyMenuRace'..i..'CheckboxText']:SetText(raceName)
+				_G['PredatorArchyMenuRace'..i..'Checkbox']:SetChecked(PredatorArchyOptions.customMode[raceName] and true or false)
+			end
+		end)
+
+		InterfaceOptions_AddCategory(tmp)
+	end
+
+	SLASH_PREDATORARCHY1, SLASH_PREDATORARCHY2 = '/predatorarchy', '/pa'
+	SlashCmdList['PREDATORARCHY'] = ctrl.SlashCmdHandler
+
+	PredatorArchyArtifacts:Hide()
+	PredatorArchyDigSites:Hide()
 
 end)
