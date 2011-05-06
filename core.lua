@@ -6,6 +6,8 @@
 	local barTex = [[Interface\AddOns\PredatorArchy\media\bar]]
 	local solidTex = [[Interface\AddOns\PredatorArchy\media\solid]]
 	local font = [[Interface\AddOns\PredatorArchy\media\accid__.ttf]]
+	local artifactsWidth = 300
+	local artifactsLineHeight = 28
 	local texts = {
 		['noskill'] = 'no archaeology skill detected!',
 		['notavailable'] = 'not available',
@@ -277,7 +279,7 @@
 		text = texts.confirm_reset,
 		button1 = 'Ok',
 		OnAccept = function()
-			crtl.Reset()
+			ctrl.Reset()
 		end,
 		timeout = 0,
 		whileDead = false,
@@ -318,6 +320,51 @@
     	fo:SetShadowOffset(1, -1)
     	return fo
     end
+
+	--[[
+	
+	]]
+	lib.CreateStatusBar = function(parent)
+		local tmp = CreateFrame('StatusBar', nil, parent)
+		tmp:SetHeight(20)
+		tmp:SetStatusBarTexture(barTex)
+		tmp:SetStatusBarColor(0.7, 0, 0)
+
+		tmp.tex = {}
+		tmp.tex['back'] = tmp:CreateTexture(nil, 'BACKGROUND')
+		tmp.tex['back']:SetAllPoints(tmp)
+		tmp.tex['back']:SetTexture(barTex)
+		tmp.tex['back']:SetVertexColor(0.3, 0.3, 0.3, 1)
+
+		tmp.text = lib.CreateFontObject(tmp, 14, font)
+		tmp.text:SetPoint('LEFT', 10, 1)
+		tmp.text:SetPoint('RIGHT', -15)
+		tmp.text:SetJustifyH('LEFT')
+		tmp.text:SetText('INIT')
+
+		tmp.tex[1] = tmp:CreateTexture(nil, 'ARTWORK')
+		tmp.tex[1]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', -1, 1)
+		tmp.tex[1]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMLEFT', 0, 0)
+		tmp.tex[1]:SetTexture(solidTex)
+		tmp.tex[1]:SetVertexColor(0, 0, 0, 1)
+		tmp.tex[2] = tmp:CreateTexture(nil, 'ARTWORK')
+		tmp.tex[2]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', 0, 1)
+		tmp.tex[2]:SetPoint('BOTTOMRIGHT', tmp, 'TOPRIGHT', 1, 0)
+		tmp.tex[2]:SetTexture(solidTex)
+		tmp.tex[2]:SetVertexColor(0, 0, 0, 1)
+		tmp.tex[3] = tmp:CreateTexture(nil, 'ARTWORK')
+		tmp.tex[3]:SetPoint('TOPLEFT', tmp, 'TOPRIGHT', 0, 0)
+		tmp.tex[3]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 1, -1)
+		tmp.tex[3]:SetTexture(solidTex)
+		tmp.tex[3]:SetVertexColor(0, 0, 0, 1)
+		tmp.tex[4] = tmp:CreateTexture(nil, 'ARTWORK')
+		tmp.tex[4]:SetPoint('TOPLEFT', tmp, 'BOTTOMLEFT', -1, 0)
+		tmp.tex[4]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 0, -1)
+		tmp.tex[4]:SetTexture(solidTex)
+		tmp.tex[4]:SetVertexColor(0, 0, 0, 1)
+
+		return tmp
+	end
 
 
 
@@ -377,17 +424,16 @@
 				( PredatorArchyOptions.mode == texts.mode_all ) )
 			) then
 				line.race = race
-				line.Icon.race = race
 
-				line.tex:SetTexture(infoTable[race].tex)
-				line.Icon.tex:SetTexture(infoTable[race].artifactIcon or nil)
+				line.RaceButton.tex:SetTexture(infoTable[race].tex)
+				line.ArtifactIcon.tex['icon']:SetTexture(infoTable[race].artifactIcon or nil)
 
 				if ( infoTable[race].artifactName ) then
 					line.Bar:SetMinMaxValues(0, infoTable[race].artifactFragsTotal)
 					line.Bar:SetValue(infoTable[race].frags)
 					line.Bar:SetStatusBarColor(unpack(artifactColors[infoTable[race].artifactRarity]))
-					line.Bar.back:SetVertexColor(unpack(artifactColors[infoTable[race].artifactRarity]))
-					line.Bar.back:SetAlpha(0.5)
+					line.Bar.tex['back']:SetVertexColor(unpack(artifactColors[infoTable[race].artifactRarity]))
+					line.Bar.tex['back']:SetAlpha(0.5)
 					line.Bar.text:SetText(infoTable[race].frags..'/'..infoTable[race].artifactFragsTotal..' - '..infoTable[race].artifactName)
 					if ( core.CheckForSolvable(race) ) then
 						line.Bar.text:SetTextColor(0, 1, 0)
@@ -395,10 +441,11 @@
 						line.Bar.text:SetTextColor(1, 1, 1)
 					end
 					line.Bar:Show()
-					line.Icon:Show()
+					line.ArtifactIcon:Show()
 				else
 					line.Bar:Hide()
-					line.tex:SetDesaturated(true)
+					line.RaceButton.tex:SetDesaturated(true)
+					line.ArtifactIcon:Hide()
 				end
 				line:Show()
 
@@ -411,7 +458,7 @@
 			line = PredatorArchyArtifacts.Lines[i]
 			line:Hide()
 			line.Bar:Hide()
-			line.Icon:Hide()
+			line.ArtifactIcon:Hide()
 		end
 	end
 
@@ -621,7 +668,16 @@
 	
 	]]
 	ctrl.Reset = function()
-	
+		PredatorArchyOptions = {}
+		PredatorArchyOptions.state = true
+		PredatorArchyOptions.mode = texts.mode_all
+		PredatorArchyOptions.customMode = {}
+		PredatorArchyOptions.PredatorArchyArtifacts = {
+			['point'] = 'CENTER', 
+			['relPoint'] = 'CENTER', 
+			['x'] = 0,
+			['y'] = 0
+		}
 	end
 
 	--[[
@@ -663,126 +719,7 @@ PredatorArchy:SetScript('OnEvent', function(self)
 		return
 	end
 
-	-- loading the saved variables
-	if ( not PredatorArchyOptions ) then
-		PredatorArchyOptions = {}
-		PredatorArchyOptions.mode = texts.mode_all
-		PredatorArchyOptions.customMode = {}
-	elseif ( not PredatorArchyOptions.mode ) then
-		PredatorArchyOptions.mode = texts.mode_all
-	elseif ( not PredatorArchyOptions.customMode ) then
-		PredatorArchyOptions.customMode = {}
-	end
-
 	local tmp
-
-	-- build the artifacts frame
-	if ( not PredatorArchyArtifacts ) then
-		-- lib.debugging('building artifact frame')
-		if ( not PredatorArchyOptions['PredatorArchyArtifacts'] ) then
-			PredatorArchyOptions['PredatorArchyArtifacts'] = {}
-		end
-		tmp = CreateFrame('Frame', 'PredatorArchyArtfacts', UIParent)
-		tmp:SetBackdrop( {
-					bgFile = solidTex,
-					edgeFile = borderTex,
-					tile = false, 
-					edgeSize = 8,
-					insets = { left = 4, right = 4, top = 4, bottom = 4 }
-			} )
-		tmp:SetBackdropColor(0, 0, 0, 0.7)
-		tmp:SetWidth(300)
-		tmp:SetHeight(330)
-		tmp:EnableMouse(true)
-		tmp:SetMovable(true)
-		tmp:RegisterForDrag('LeftButton')
-		tmp:SetScript("OnDragStart", function(self) if IsAltKeyDown() then self:StartMoving() end end)
-		tmp:SetScript("OnDragStop", function(self)
-			self:StopMovingOrSizing()
-			local point, _, relPoint, x, y = self:GetPoint(1)
-			PredatorArchyOptions['PredatorArchyArtifacts'].point = point
-			PredatorArchyOptions['PredatorArchyArtifacts'].relPoint = relPoint
-			PredatorArchyOptions['PredatorArchyArtifacts'].x = x
-			PredatorArchyOptions['PredatorArchyArtifacts'].y = y
-		end)
-		tmp:ClearAllPoints()
-		tmp:SetPoint(PredatorArchyOptions['PredatorArchyArtifacts'].point or 'CENTER', UIParent, PredatorArchyOptions['PredatorArchyArtifacts'].relPoint or 'CENTER', PredatorArchyOptions['PredatorArchyArtifacts'].x or 0, PredatorArchyOptions['PredatorArchyArtifacts'].y or 0)
-		PredatorArchyArtifacts = tmp
-
-		tmp = CreateFrame('StatusBar', nil, PredatorArchyArtifacts)
-		tmp:SetPoint('TOPLEFT', 15, -10)
-		tmp:SetPoint('BOTTOMRIGHT', PredatorArchyArtifacts, 'TOPRIGHT', -15, -30)
-		tmp:SetStatusBarTexture(barTex)
-		tmp:SetStatusBarColor(0, 0.7, 0)
-		PredatorArchyArtifacts.Skill = tmp
-
-		tmp = PredatorArchyArtifacts.Skill:CreateTexture(nil, 'BACKGROUND')
-		tmp:SetAllPoints(PredatorArchyArtifacts.Skill)
-		tmp:SetTexture(barTex)
-		tmp:SetVertexColor(0.3, 0.3, 0.3, 1)
-		PredatorArchyArtifacts.Skill.back = tmp
-
-		tmp = lib.CreateFontObject(PredatorArchyArtifacts.Skill, 14, font)
-		tmp:SetPoint('CENTER', 0, 1)
-		tmp:SetText('INIT')
-		tmp:SetJustifyH('CENTER')
-		PredatorArchyArtifacts.Skill.text = tmp
-
-		PredatorArchyArtifacts.Lines = {}
-		for i = 1, numArchRaces do
-			tmp = CreateFrame('Frame', nil, PredatorArchyArtifacts)
-			tmp:SetSize(24, 24)
-			tmp:SetPoint('TOPLEFT', PredatorArchyArtifacts.Skill, 'TOPLEFT', 0, (-i*28))
-			tmp:SetScript('OnEnter', function(self)
-				GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
-				GameTooltip:AddLine(self.race)
-				GameTooltip:AddLine(texts.keystones..': '..GetItemCount(infoTable[self.race].keystoneID), 1, 1, 1, 1)
-				GameTooltip:Show()
-			end)
-			tmp:SetScript('OnLeave', function()
-				GameTooltip:Hide()
-			end)
-			tmp.tex = tmp:CreateTexture(nil, 'OVERLAY')
-			tmp.tex:SetAllPoints(tmp)
-			tmp.tex:SetTexCoord(0, 0.6, 0, 0.6)
-			tmp:Hide()
-			tmp.Icon = CreateFrame('Button', nil, PredatorArchyArtifacts)
-			tmp.Icon:SetSize(22, 22)
-			tmp.Icon:SetPoint('TOP', tmp, 'TOP', 0, -4)
-			tmp.Icon:SetPoint('RIGHT', PredatorArchyArtifacts, 'RIGHT', -15, 0)
-			tmp.Icon:SetScript('OnEnter', function(self)
-				GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
-				GameTooltip:AddLine(infoTable[self.race].artifactName or '')
-				GameTooltip:AddLine(infoTable[self.race].artifactDesc or '', 1, 1, 1, 1, 1)
-				GameTooltip:SetWidth(200)
-				GameTooltip:Show()
-			end)
-			tmp.Icon:SetScript('OnLeave', function()
-				GameTooltip:Hide()
-			end)
-			tmp.Icon:SetScript('OnClick', function(self)
-				core.SolveArtifact(self.race)
-			end)
-			tmp.Icon.tex = tmp.Icon:CreateTexture(nil, 'OVERLAY')
-			tmp.Icon.tex:SetAllPoints(tmp.Icon)
-			tmp.Icon.tex:SetTexCoord(0.1, 0.9, 0.1, 0.9)
-			tmp.Icon:Hide()
-			tmp.Bar = CreateFrame('StatusBar', nil, PredatorArchyArtifacts)
-			tmp.Bar:SetPoint('TOPLEFT', tmp, 'TOPRIGHT', 5, -4)
-			tmp.Bar:SetPoint('BOTTOMRIGHT', tmp.Icon, 'BOTTOMLEFT', -10, 0)
-			tmp.Bar:SetStatusBarTexture(barTex)
-			tmp.Bar.back = tmp.Bar:CreateTexture(nil, 'BACKGROUND')
-			tmp.Bar.back:SetAllPoints(tmp.Bar)
-			tmp.Bar.back:SetTexture(barTex)
-			tmp.Bar.back:SetVertexColor(0.3, 0.3, 0.3, 1)
-			tmp.Bar.text = lib.CreateFontObject(tmp.Bar, 14, font)
-			tmp.Bar.text:SetPoint('LEFT', 10, 1)
-			tmp.Bar.text:SetPoint('RIGHT', -15)
-			tmp.Bar.text:SetText('INIT')
-			tmp.Bar:Hide()
-			PredatorArchyArtifacts.Lines[i] = tmp
-		end
-	end
 
 	-- build the dig site frame
 	if ( not PredatorArchyDigSites ) then
@@ -1045,4 +982,163 @@ PredatorArchy:SetScript('OnEvent', function(self)
 		end
 	end)
 
+end)
+
+
+local loader = CreateFrame('Frame')
+loader:RegisterEvent('ADDON_LOADED')
+loader:SetScript('OnEvent', function(self, event, addon)
+	if ( addon ~= 'PredatorArchy' ) then
+		return
+	end
+
+	local i, tmp
+
+
+	--[[
+		SAVED VARIABLES
+	]]
+	if ( not PredatorArchyOptions ) then
+		ResetOptions()
+	else
+		if ( not PredatorArchyOptions.state ) then
+			PredatorArchyOptions.state = true
+		end
+		if ( not PredatorArchyOptions.mode ) then
+			PredatorArchyOptions.mode = texts.mode_all
+		end
+		if ( not PredatorArchyOptions.customMode ) then
+			PredatorArchyOptions.customMode = {}
+		end
+		if ( not PredatorArchyOptions.PredatorArchyArtifacts ) then
+			PredatorArchyOptions.PredatorArchyArtifacts = {
+				['point'] = 'CENTER', 
+				['relPoint'] = 'CENTER', 
+				['x'] = 0,
+				['y'] = 0
+			}
+		end
+	end
+
+
+	--[[
+		PREDATOR ARCHY ARTIFACTS
+	]]
+	if ( not PredatorArchyArtifacts ) then
+		PredatorArchyArtifacts = CreateFrame('Frame', 'PredatorArchyArtifacts', UIParent)
+		PredatorArchyArtifacts:SetBackdrop( {
+			bgFile = solidTex,
+			edgeFile = borderTex,
+			tile = false,
+			edgeSize = 8,
+			insets = { left = 4, right = 4, top = 4, bottom = 4 }
+		} )
+		PredatorArchyArtifacts:SetBackdropColor(0, 0, 0, 0.7)
+		PredatorArchyArtifacts:SetWidth(artifactsWidth)
+		PredatorArchyArtifacts:SetHeight(330)
+		PredatorArchyArtifacts:EnableMouse(true)
+		PredatorArchyArtifacts:SetMovable(true)
+		PredatorArchyArtifacts:RegisterForDrag('LeftButton')
+		PredatorArchyArtifacts:SetScript('OnDragStart', function(self)
+			if ( IsAltKeyDown() ) then
+				self:StartMoving()
+			end
+		end)
+		PredatorArchyArtifacts:SetScript('OnDragStop', function(self)
+			self:StopMovingOrSizing()
+			local point, _, relPoint, x, y = self:GetPoint(1)
+			PredatorArchyOptions['PredatorArchyArtifacts'].point = point
+			PredatorArchyOptions['PredatorArchyArtifacts'].relPoint = relPoint
+			PredatorArchyOptions['PredatorArchyArtifacts'].x = x
+			PredatorArchyOptions['PredatorArchyArtifacts'].y = y
+		end)
+		PredatorArchyArtifacts:ClearAllPoints()
+		PredatorArchyArtifacts:SetPoint(PredatorArchyOptions['PredatorArchyArtifacts'].point, UIParent, PredatorArchyOptions['PredatorArchyArtifacts'].relPoint, PredatorArchyOptions['PredatorArchyArtifacts'].x, PredatorArchyOptions['PredatorArchyArtifacts'].y)
+
+		PredatorArchyArtifacts.Skill = lib.CreateStatusBar(PredatorArchyArtifacts)
+		PredatorArchyArtifacts.Skill:SetPoint('TOPLEFT', PredatorArchyArtifacts, 'TOPLEFT', 15, -10)
+		PredatorArchyArtifacts.Skill:SetPoint('RIGHT', PredatorArchyArtifacts, 'RIGHT', -15, 0)
+		PredatorArchyArtifacts.Skill.text:ClearAllPoints()
+		PredatorArchyArtifacts.Skill.text:SetPoint('CENTER', 0, 1)
+		PredatorArchyArtifacts.Skill.text:SetJustifyH('CENTER')
+
+		PredatorArchyArtifacts.Lines = {}
+		for i = 1, numArchRaces do
+			tmp = CreateFrame('Frame', nil, PredatorArchyArtifacts)
+			tmp:SetHeight(artifactsLineHeight)
+			tmp:SetPoint('TOPLEFT', PredatorArchyArtifacts.Skill, 'TOPLEFT', -5, (-i*artifactsLineHeight))
+			tmp:SetPoint('RIGHT', PredatorArchyArtifacts.Skill, 'RIGHT', 2, 0)
+			PredatorArchyArtifacts.Lines[i] = tmp
+
+			-- Race Icon
+			tmp = CreateFrame('Button', nil, PredatorArchyArtifacts.Lines[i])
+			tmp:SetSize(24, 24)
+			tmp:SetPoint('TOPLEFT')
+			tmp.tex = tmp:CreateTexture(nil, 'OVERLAY')
+			tmp.tex:SetAllPoints(tmp)
+			tmp.tex:SetTexCoord(0, 0.6, 0, 0.6)
+			tmp:SetScript('OnEnter', function(self)
+				local race = self:GetParent().race
+				GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+				GameTooltip:AddLine(race)
+				GameTooltip:AddLine(texts.keystones..': '..GetItemCount(infoTable[race].keystoneID), 1, 1, 1, 1)
+				GameTooltip:Show()
+			end)
+			tmp:SetScript('OnLeave', function()
+				GameTooltip:Hide()
+			end)
+			PredatorArchyArtifacts.Lines[i].RaceButton = tmp
+
+			-- Artifact Icon
+			tmp = CreateFrame('Button', nil, PredatorArchyArtifacts.Lines[i])
+			tmp:SetSize(20, 20)
+			tmp:SetPoint('TOPRIGHT', 0, -4)
+			tmp.tex = {}
+			tmp.tex['icon'] = tmp:CreateTexture(nil, 'OVERLAY')
+			tmp.tex['icon']:SetAllPoints(tmp)
+			tmp.tex['icon']:SetTexCoord(0.1, 0.9, 0.1, 0.9)
+			tmp.tex[1] = tmp:CreateTexture(nil, 'ARTWORK')
+			tmp.tex[1]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', -1, 1)
+			tmp.tex[1]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMLEFT', 0, 0)
+			tmp.tex[1]:SetTexture(solidTex)
+			tmp.tex[1]:SetVertexColor(0, 0, 0, 1)
+			tmp.tex[2] = tmp:CreateTexture(nil, 'ARTWORK')
+			tmp.tex[2]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', 0, 1)
+			tmp.tex[2]:SetPoint('BOTTOMRIGHT', tmp, 'TOPRIGHT', 1, 0)
+			tmp.tex[2]:SetTexture(solidTex)
+			tmp.tex[2]:SetVertexColor(0, 0, 0, 1)
+			tmp.tex[3] = tmp:CreateTexture(nil, 'ARTWORK')
+			tmp.tex[3]:SetPoint('TOPLEFT', tmp, 'TOPRIGHT', 0, 0)
+			tmp.tex[3]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 1, -1)
+			tmp.tex[3]:SetTexture(solidTex)
+			tmp.tex[3]:SetVertexColor(0, 0, 0, 1)
+			tmp.tex[4] = tmp:CreateTexture(nil, 'ARTWORK')
+			tmp.tex[4]:SetPoint('TOPLEFT', tmp, 'BOTTOMLEFT', -1, 0)
+			tmp.tex[4]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 0, -1)
+			tmp.tex[4]:SetTexture(solidTex)
+			tmp.tex[4]:SetVertexColor(0, 0, 0, 1)
+			tmp:SetScript('OnEnter', function(self)
+				local race = self:GetParent().race
+				GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+				GameTooltip:AddLine(infoTable[race].artifactName or '')
+				GameTooltip:AddLine(infoTable[race].artifactDesc or '', 1, 1, 1, 1, 1)
+				GameTooltip:SetWidth(200)
+				GameTooltip:Show()
+			end)
+			tmp:SetScript('OnLeave', function()
+				GameTooltip:Hide()
+			end)
+			tmp:SetScript('OnClick', function(self)
+				core.SolveArtifact(self.race)
+			end)
+			PredatorArchyArtifacts.Lines[i].ArtifactIcon = tmp
+
+			-- Progress Bar
+			tmp = lib.CreateStatusBar(PredatorArchyArtifacts.Lines[i])
+			tmp:SetPoint('TOPLEFT', PredatorArchyArtifacts.Lines[i].RaceButton, 'TOPRIGHT', 5, -4)
+			tmp:SetPoint('RIGHT', PredatorArchyArtifacts.Lines[i].ArtifactIcon, 'LEFT', -7, 0)
+			PredatorArchyArtifacts.Lines[i].Bar = tmp
+		end
+
+	end
 end)
