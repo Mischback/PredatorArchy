@@ -17,10 +17,20 @@
 		['keystones'] = 'Keystones',
 		['solving_with_keystones'] = 'Would you like to solve this artifact using your keystones?',
 		['confirm_reset'] = 'Do you really want to reset the settings?',
+		['stats'] = 'Statistics',
+		['rare'] = 'Rar',
+		['max_solved'] = 'Most solved',
 		['mode_all'] = 'All',
 		['mode_artifacts'] = 'Artifacts',
 		['mode_fragments'] = 'Fragments',
 		['mode_custom'] = 'Custom',
+		['tooltip_showSkill'] = 'Show skill',
+		['tooltip_openConfig'] = 'Open configuration dialogue',
+		['tooltip_show'] = 'Show PredatorArchy windows',
+		['tooltip_hide'] = 'Hide PredatorArchy windows',
+		['tooltip_sleep'] = 'Send PredatorArchy to sleep',
+		['tooltip_reset'] = 'Reset PredatorArchy settings',
+		['tooltip_statistics'] = 'Show statistics',
 	}
 	local artifactColors = {
 		[0] = {0.7, 0.7, 0.7},							-- for normal, 'grey' artifacts
@@ -38,7 +48,7 @@
 		This table holds all information about the races, including their current active
 		fragment count
 	]]
-	local PredatorArchy, PredatorArchyArtifacts, PredatorArchyDigSites
+	local PredatorArchy, PredatorArchyArtifacts, PredatorArchyDigSites, PredatorArchyMenu
 	local currentSkill = 0
 	local infoTable = {}
 	local continentRaceTable = {
@@ -322,6 +332,49 @@
     	return fo
     end
 
+	--[[
+	
+	]]
+	lib.CreateBorder = function(frame)
+		frame.tex[1] = frame:CreateTexture(nil, 'ARTWORK')
+		frame.tex[1]:SetPoint('TOPLEFT', frame, 'TOPLEFT', -1, 1)
+		frame.tex[1]:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMLEFT', 0, 0)
+		frame.tex[1]:SetTexture(solidTex)
+		frame.tex[1]:SetVertexColor(0, 0, 0, 1)
+		frame.tex[2] = frame:CreateTexture(nil, 'ARTWORK')
+		frame.tex[2]:SetPoint('TOPLEFT', frame, 'TOPLEFT', 0, 1)
+		frame.tex[2]:SetPoint('BOTTOMRIGHT', frame, 'TOPRIGHT', 1, 0)
+		frame.tex[2]:SetTexture(solidTex)
+		frame.tex[2]:SetVertexColor(0, 0, 0, 1)
+		frame.tex[3] = frame:CreateTexture(nil, 'ARTWORK')
+		frame.tex[3]:SetPoint('TOPLEFT', frame, 'TOPRIGHT', 0, 0)
+		frame.tex[3]:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 1, -1)
+		frame.tex[3]:SetTexture(solidTex)
+		frame.tex[3]:SetVertexColor(0, 0, 0, 1)
+		frame.tex[4] = frame:CreateTexture(nil, 'ARTWORK')
+		frame.tex[4]:SetPoint('TOPLEFT', frame, 'BOTTOMLEFT', -1, 0)
+		frame.tex[4]:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 0, -1)
+		frame.tex[4]:SetTexture(solidTex)
+		frame.tex[4]:SetVertexColor(0, 0, 0, 1)
+	end
+
+	--[[
+	]]
+	lib.CreateCtrlButton = function(parent)
+		local tmp = CreateFrame('Button', nil, parent)
+		tmp:SetSize(18, 18)
+		tmp.tex = {}
+		tmp.tex['icon'] = tmp:CreateTexture(nil, 'OVERLAY')
+		tmp.tex['icon']:SetAllPoints(tmp)
+		tmp.tex['icon']:SetTexture(solidTex)
+		tmp.tex['icon']:SetVertexColor(1, 0, 0, 0.3)
+		lib.CreateBorder(tmp)
+		tmp:SetScript('OnLeave', function()
+			GameTooltip:Hide()
+		end)
+		return tmp
+	end
+
 	--[[ Creates a StatusBar with border and text
 		FRAME CreateStatusBar(FRAME parent)
 	]]
@@ -343,26 +396,7 @@
 		tmp.text:SetJustifyH('LEFT')
 		tmp.text:SetText('INIT')
 
-		tmp.tex[1] = tmp:CreateTexture(nil, 'ARTWORK')
-		tmp.tex[1]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', -1, 1)
-		tmp.tex[1]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMLEFT', 0, 0)
-		tmp.tex[1]:SetTexture(solidTex)
-		tmp.tex[1]:SetVertexColor(0, 0, 0, 1)
-		tmp.tex[2] = tmp:CreateTexture(nil, 'ARTWORK')
-		tmp.tex[2]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', 0, 1)
-		tmp.tex[2]:SetPoint('BOTTOMRIGHT', tmp, 'TOPRIGHT', 1, 0)
-		tmp.tex[2]:SetTexture(solidTex)
-		tmp.tex[2]:SetVertexColor(0, 0, 0, 1)
-		tmp.tex[3] = tmp:CreateTexture(nil, 'ARTWORK')
-		tmp.tex[3]:SetPoint('TOPLEFT', tmp, 'TOPRIGHT', 0, 0)
-		tmp.tex[3]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 1, -1)
-		tmp.tex[3]:SetTexture(solidTex)
-		tmp.tex[3]:SetVertexColor(0, 0, 0, 1)
-		tmp.tex[4] = tmp:CreateTexture(nil, 'ARTWORK')
-		tmp.tex[4]:SetPoint('TOPLEFT', tmp, 'BOTTOMLEFT', -1, 0)
-		tmp.tex[4]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 0, -1)
-		tmp.tex[4]:SetTexture(solidTex)
-		tmp.tex[4]:SetVertexColor(0, 0, 0, 1)
+		lib.CreateBorder(tmp)
 
 		return tmp
 	end
@@ -885,6 +919,93 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		PredatorArchyArtifacts.Skill.text:ClearAllPoints()
 		PredatorArchyArtifacts.Skill.text:SetPoint('CENTER', 0, 1)
 		PredatorArchyArtifacts.Skill.text:SetJustifyH('CENTER')
+		PredatorArchyArtifacts.Skill:EnableMouse(true)
+		PredatorArchyArtifacts.Skill:SetScript('OnMouseUp', function(self)
+			self:Hide()
+			PredatorArchyArtifacts.Ctrl:Show()
+		end)
+
+		PredatorArchyArtifacts.Ctrl = CreateFrame('Frame', nil, PredatorArchyArtifacts)
+		PredatorArchyArtifacts.Ctrl:SetPoint('TOPLEFT', PredatorArchyArtifacts.Skill, 'TOPLEFT', 0, -1)
+		PredatorArchyArtifacts.Ctrl:SetPoint('BOTTOMRIGHT', PredatorArchyArtifacts.Skill)
+
+		PredatorArchyArtifacts.Ctrl.ShowSkillButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.ShowSkillButton:SetPoint('TOPLEFT')
+		PredatorArchyArtifacts.Ctrl.ShowSkillButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_showSkill)
+			GameTooltip:Show()
+		end)
+		PredatorArchyArtifacts.Ctrl.ShowSkillButton:SetScript('OnClick', function()
+			PredatorArchyArtifacts.Ctrl:Hide()
+			PredatorArchyArtifacts.Skill:Show()
+		end)
+
+		PredatorArchyArtifacts.Ctrl.OpenConfigButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.OpenConfigButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.ShowSkillButton, 'TOPRIGHT', 15, 0)
+		PredatorArchyArtifacts.Ctrl.OpenConfigButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_openConfig)
+			GameTooltip:Show()
+		end)
+		PredatorArchyArtifacts.Ctrl.OpenConfigButton:SetScript('OnClick', function()
+			InterfaceOptionsFrame_OpenToCategory(PredatorArchyMenu)
+		end)
+
+		PredatorArchyArtifacts.Ctrl.HideButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.HideButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.OpenConfigButton, 'TOPRIGHT', 5, 0)
+		PredatorArchyArtifacts.Ctrl.HideButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_hide)
+			GameTooltip:Show()
+		end)
+		PredatorArchyArtifacts.Ctrl.HideButton:SetScript('OnClick', ctrl.Hide)
+
+		PredatorArchyArtifacts.Ctrl.SleepButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.SleepButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.HideButton, 'TOPRIGHT', 5, 0)
+		PredatorArchyArtifacts.Ctrl.SleepButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_sleep)
+			GameTooltip:Show()
+		end)
+		PredatorArchyArtifacts.Ctrl.SleepButton:SetScript('OnClick', ctrl.Sleep)
+
+		PredatorArchyArtifacts.Ctrl.StatisticsButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.SleepButton, 'TOPRIGHT', 15, 0)
+		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_statistics)
+			GameTooltip:Show()
+		end)
+		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetScript('OnClick', function()
+			local i, j, raceName, raceCount, raceRar, curName, curRar, curCount, maxName, maxCount
+			RequestArtifactCompletionHistory()
+			maxName = ''
+			maxCount = 0
+			lib.debugging(texts.stats)
+			for i = 1, numArchRaces do
+				raceName = GetArchaeologyRaceInfo(i)
+				raceCount = 0
+				raceRar = 0
+				for j = 1, GetNumArtifactsByRace(i) do
+					curName, _, curRar, _, _, _, _, _, curCount = GetArtifactInfoByRace(i, j)
+					if ( curCount > maxCount ) then
+						maxName = curName
+						maxCount = curCount
+					end
+					if ( curRar == 1 ) then
+						raceRar = raceRar + curCount
+					end
+					raceCount = raceCount + curCount
+				end
+				if ( raceCount > 1 ) then
+					lib.debugging(raceName..': '..raceCount..' ('..raceRar..' '..texts.rare..')')
+				end
+			end
+			lib.debugging(texts.max_solved..': '..maxName..' ('..maxCount..')')
+		end)
+
+		PredatorArchyArtifacts.Ctrl:Hide()
 
 		PredatorArchyArtifacts.Lines = {}
 		for i = 1, numArchRaces do
@@ -925,26 +1046,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			tmp.tex['icon'] = tmp:CreateTexture(nil, 'OVERLAY')
 			tmp.tex['icon']:SetAllPoints(tmp)
 			tmp.tex['icon']:SetTexCoord(0.1, 0.9, 0.1, 0.9)
-			tmp.tex[1] = tmp:CreateTexture(nil, 'ARTWORK')
-			tmp.tex[1]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', -1, 1)
-			tmp.tex[1]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMLEFT', 0, 0)
-			tmp.tex[1]:SetTexture(solidTex)
-			tmp.tex[1]:SetVertexColor(0, 0, 0, 1)
-			tmp.tex[2] = tmp:CreateTexture(nil, 'ARTWORK')
-			tmp.tex[2]:SetPoint('TOPLEFT', tmp, 'TOPLEFT', 0, 1)
-			tmp.tex[2]:SetPoint('BOTTOMRIGHT', tmp, 'TOPRIGHT', 1, 0)
-			tmp.tex[2]:SetTexture(solidTex)
-			tmp.tex[2]:SetVertexColor(0, 0, 0, 1)
-			tmp.tex[3] = tmp:CreateTexture(nil, 'ARTWORK')
-			tmp.tex[3]:SetPoint('TOPLEFT', tmp, 'TOPRIGHT', 0, 0)
-			tmp.tex[3]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 1, -1)
-			tmp.tex[3]:SetTexture(solidTex)
-			tmp.tex[3]:SetVertexColor(0, 0, 0, 1)
-			tmp.tex[4] = tmp:CreateTexture(nil, 'ARTWORK')
-			tmp.tex[4]:SetPoint('TOPLEFT', tmp, 'BOTTOMLEFT', -1, 0)
-			tmp.tex[4]:SetPoint('BOTTOMRIGHT', tmp, 'BOTTOMRIGHT', 0, -1)
-			tmp.tex[4]:SetTexture(solidTex)
-			tmp.tex[4]:SetVertexColor(0, 0, 0, 1)
+			lib.CreateBorder(tmp)
 			tmp:SetScript('OnEnter', function(self)
 				local race = self:GetParent().race
 				GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -1045,21 +1147,53 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		tmp.ShowButton = CreateFrame('Button', 'PredatorArchyMenuShowButton', tmp, 'OptionsButtonTemplate')
 		tmp.ShowButton:SetText('Show')
 		tmp.ShowButton:SetPoint('TOPLEFT', tmp.title, 'BOTTOMLEFT', 0, -20)
+		tmp.ShowButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_show)
+			GameTooltip:Show()
+		end)
+		tmp.ShowButton:SetScript('OnLeave', function()
+			GameTooltip:Hide()
+		end)
 		tmp.ShowButton:SetScript('OnClick', ctrl.Show)
 
 		tmp.HideButton = CreateFrame('Button', 'PredatorArchyMenuHideButton', tmp, 'OptionsButtonTemplate')
 		tmp.HideButton:SetText('Hide')
 		tmp.HideButton:SetPoint('TOPLEFT', tmp.ShowButton, 'TOPRIGHT', 5, 0)
+		tmp.HideButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_hide)
+			GameTooltip:Show()
+		end)
+		tmp.HideButton:SetScript('OnLeave', function()
+			GameTooltip:Hide()
+		end)
 		tmp.HideButton:SetScript('OnClick', ctrl.Hide)
 
 		tmp.SleepButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
 		tmp.SleepButton:SetText('Sleep')
 		tmp.SleepButton:SetPoint('TOPLEFT', tmp.HideButton, 'TOPRIGHT', 5, 0)
+		tmp.SleepButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_sleep)
+			GameTooltip:Show()
+		end)
+		tmp.SleepButton:SetScript('OnLeave', function()
+			GameTooltip:Hide()
+		end)
 		tmp.SleepButton:SetScript('OnClick', ctrl.Sleep)
 
 		tmp.ResetButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
 		tmp.ResetButton:SetText('Reset')
 		tmp.ResetButton:SetPoint('TOPLEFT', tmp.SleepButton, 'TOPRIGHT', 5, 0)
+		tmp.ResetButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_reset)
+			GameTooltip:Show()
+		end)
+		tmp.ResetButton:SetScript('OnLeave', function()
+			GameTooltip:Hide()
+		end)
 		tmp.ResetButton:SetScript('OnClick', function()
 			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
 		end)
@@ -1138,7 +1272,8 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			end
 		end)
 
-		InterfaceOptions_AddCategory(tmp)
+		PredatorArchyMenu = tmp
+		InterfaceOptions_AddCategory(PredatorArchyMenu)
 	end
 
 	SLASH_PREDATORARCHY1, SLASH_PREDATORARCHY2 = '/predatorarchy', '/pa'
