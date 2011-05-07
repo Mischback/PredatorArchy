@@ -368,6 +368,9 @@
 	end
 
 
+-- *********************************************************************************
+-- ***** CORE FUNCTIONS ************************************************************
+-- *********************************************************************************
 
 	--[[ Updates the current archaeology skill
 		VOID UpdateSkill(INT index)
@@ -630,6 +633,9 @@
 	end
 
 
+-- *********************************************************************************
+-- ***** CONTROL FUNCTIONS *********************************************************
+-- *********************************************************************************
 
 	--[[ Shows the frames and registers the events
 		VOID Show()
@@ -673,11 +679,10 @@
 		ctrl.Hide()
 	end
 
-	--[[ Resets all settings to default
-		VOID Reset()
-		Yes, default-values are here!
+	--[[ Sets the default-values of the SavedVars
+		VOID SetDefaults()
 	]]
-	ctrl.Reset = function()
+	ctrl.SetDefaults = function()
 		PredatorArchyOptions = {}
 		PredatorArchyOptions.state = true
 		PredatorArchyOptions.mode = texts.mode_all
@@ -694,7 +699,14 @@
 			['x'] = 0,
 			['y'] = 0
 		}
+	end
 
+	--[[ Resets all settings to default
+		VOID Reset()
+	]]
+	ctrl.Reset = function()
+		ctrl.SetDefaults()
+		core.BuildInfoTable()
 		core.UpdateArtifactWindow()
 		PredatorArchyArtifacts:ClearAllPoints()
 		PredatorArchyArtifacts:SetPoint(PredatorArchyOptions['PredatorArchyArtifacts'].point, UIParent, PredatorArchyOptions['PredatorArchyArtifacts'].relPoint, PredatorArchyOptions['PredatorArchyArtifacts'].x, PredatorArchyOptions['PredatorArchyArtifacts'].y)
@@ -729,13 +741,8 @@
 	end
 
 
-
-
 -- *********************************************************************************
 
---[[ *******************************************************************************
-
-]]
 PredatorArchy = CreateFrame('Frame', 'PredatorArchy', UIParent)
 PredatorArchy:RegisterEvent('PLAYER_LOGIN')
 PredatorArchy:SetScript('OnEvent', function(self)
@@ -793,6 +800,8 @@ PredatorArchy:SetScript('OnEvent', function(self)
 end)
 
 
+-- *********************************************************************************
+
 local loader = CreateFrame('Frame')
 loader:RegisterEvent('ADDON_LOADED')
 loader:SetScript('OnEvent', function(self, event, addon)
@@ -806,7 +815,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		SAVED VARIABLES
 	]]
 	if ( not PredatorArchyOptions ) then
-		ctrl.Reset()
+		ctrl.SetDefaults()
 	else
 		if ( not PredatorArchyOptions.state ) then
 			PredatorArchyOptions.state = (PredatorArchyOptions.state and true) or false

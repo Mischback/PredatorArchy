@@ -1,8 +1,9 @@
 ## Interface: 40100
 ## Author: Mischback
 ## Title: PredatorArchy
-## Version: 1.3
+## Version: 1.4
 ## DefaultState: disabled
+## RequiredDeps: Blizzard_ArchaeologyUI
 ## SavedVariables: PredatorArchyOptions
 
 core.lua
