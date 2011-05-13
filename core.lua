@@ -48,6 +48,7 @@
 		['tooltip_sleep'] = 'Send PredatorArchy to sleep',
 		['tooltip_reset'] = 'Reset PredatorArchy settings',
 		['tooltip_statistics'] = 'Show statistics',
+		['tooltip_dig'] = 'Dig'
 	}
 	local artifactColors = {
 		[0] = {0.7, 0.7, 0.7},							-- for normal, 'grey' artifacts
@@ -60,6 +61,11 @@
 -- *********************************************************************************
 
 	local numArchRaces = 10			-- made this static, so we don't have to wait for PLAYER_ALIVE on login
+	local diggingSpellID = 80451
+	local digRangeIndicator = {
+		['green'] = 1,
+		['yellow'] = 3,
+	}
 
 	--[[
 		This table holds all information about the races, including their current active
@@ -702,6 +708,46 @@
 		SetMapByID(mapBackup)
 	end
 
+	--[[
+	
+	]]
+	core.DigPositionX = 0
+	core.DigPositionY = 0
+	core.UpdateDigRange = function(self, event, unit, _, _, _, spellID)
+		if ( (unit ~= 'player') or (spellID~=diggingSpellID) ) then return end
+		core.DigPositionX, core.DigPositionY = GetPlayerMapPosition('player')
+		-- lib.debugging('digging@'..core.DigPositionX..'/'..core.DigPositionY)
+		self.TimeSinceLastUpdate = 0
+		self.StartOnUpdate = 0
+		self:SetScript('OnUpdate', function(self, elapsed)
+			self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
+			self.StartOnUpdate = self.StartOnUpdate + elapsed
+			if ( self.StartOnUpdate > 10 ) then
+				lib.debugging('too late')
+				self:SetScript('OnUpdate', nil)
+				self:SetValue(0)
+			end
+			if ( self.TimeSinceLastUpdate > 0.5 ) then
+				local x, y = GetPlayerMapPosition('player')
+				-- local range = ((100*core.DigPositionX-100*x)*(100*core.DigPositionX-100*x))+((100*core.DigPositionY-100*y)*(100*core.DigPositionY-100*y))
+				local xOff, yOff = core.DigPositionX-x, core.DigPositionY-y
+				local range = sqrt((xOff*xOff)+(yOff*yOff))
+				lib.debugging(xOff..'/'..yOff..' = '..range)
+				if ( range < digRangeIndicator['green'] ) then
+					self:SetStatusBarColor(0, 0.7, 0, 1)
+					self:SetValue(range)
+				elseif ( range < digRangeIndicator['yellow'] ) then
+					self:SetStatusBarColor(0.7, 0.7, 0, 1)
+					self:SetValue(range)
+				else
+					self:SetStatusBarColor(0.7, 0, 0, 1)
+					self:SetValue(range)
+				end
+				self.TimeSinceLastUpdate = 0
+			end
+		end)
+	end
+
 	--[[ Prints statistics about your digging
 		VOID PrintStatistics()
 	]]
@@ -933,6 +979,8 @@ PredatorArchy:SetScript('OnEvent', function(self)
 		self:RegisterEvent('ARTIFACT_DIG_SITE_UPDATED')
 		self:RegisterEvent('ZONE_CHANGED_NEW_AREA')
 		self:RegisterEvent('TAXIMAP_OPENED')
+		self:RegisterEvent('PLAYER_REGEN_ENABLED')
+		self:RegisterEvent('PLAYER_REGEN_DISABLED')
 		PredatorArchyArtifacts:Show()
 		PredatorArchyDigSites:Show()
 	end
@@ -959,6 +1007,10 @@ PredatorArchy:SetScript('OnEvent', function(self)
 			core.FindDigSiteOnContinent()
 		elseif ( event == 'TAXIMAP_OPENED' ) then
 			core.FindDigSitesOnTaxiMap()
+		elseif ( event == 'PLAYER_REGEN_ENABLED' ) then
+			PredatorArchyArtifacts.Ctrl.DigIndicator:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
+		elseif ( event == 'PLAYER_REGEN_DISABLED' ) then
+			PredatorArchyArtifacts.Ctrl.DigIndicator:UnregisterEvent('UNIT_SPELLCAST_SUCCEEDED')
 		end
 	end)
 
@@ -1118,6 +1170,24 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			GameTooltip:Show()
 		end)
 		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetScript('OnClick', core.PrintStatistics)
+
+		PredatorArchyArtifacts.Ctrl.DigButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl, textures.button_sleep, 'D')
+		PredatorArchyArtifacts.Ctrl.DigButton:SetPoint('TOPRIGHT')
+		PredatorArchyArtifacts.Ctrl.DigButton:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
+			GameTooltip:AddLine(texts.tooltip_dig)
+			GameTooltip:Show()
+		end)
+
+		PredatorArchyArtifacts.Ctrl.DigIndicator = lib.CreateStatusBar(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.DigIndicator.text:Hide()
+		PredatorArchyArtifacts.Ctrl.DigIndicator.text = nil
+		PredatorArchyArtifacts.Ctrl.DigIndicator:SetMinMaxValues(0, 10)
+		PredatorArchyArtifacts.Ctrl.DigIndicator:SetValue(0)
+		PredatorArchyArtifacts.Ctrl.DigIndicator:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.StatisticsButton, 'TOPRIGHT', 15, 0)
+		PredatorArchyArtifacts.Ctrl.DigIndicator:SetPoint('BOTTOMRIGHT', PredatorArchyArtifacts.Ctrl.DigButton, 'BOTTOMLEFT', -15, 0)
+		PredatorArchyArtifacts.Ctrl.DigIndicator:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
+		PredatorArchyArtifacts.Ctrl.DigIndicator:SetScript('OnEvent', core.UpdateDigRange)
 
 		PredatorArchyArtifacts.Ctrl:Hide()
 
