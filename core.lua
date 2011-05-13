@@ -2,10 +2,18 @@
 
 ]]
 
-	local borderTex = [[Interface\AddOns\PredatorArchy\media\border_generic]]
-	local barTex = [[Interface\AddOns\PredatorArchy\media\bar]]
-	local solidTex = [[Interface\AddOns\PredatorArchy\media\solid]]
 	local font = [[Interface\AddOns\PredatorArchy\media\accid__.ttf]]
+	local textures = {
+		['border'] = [[Interface\AddOns\PredatorArchy\media\border_generic]],
+		['bar'] = [[Interface\AddOns\PredatorArchy\media\bar]],
+		['solid'] = [[Interface\AddOns\PredatorArchy\media\solid]],
+		['minimap'] = [[Interface\AddOns\PredatorArchy\media\button_minimap]],
+		['button_back'] = [[Interface\AddOns\PredatorArchy\media\button_back]],
+		['button_config'] = [[Interface\AddOns\PredatorArchy\media\button_config]],
+		['button_hide'] = [[Interface\AddOns\PredatorArchy\media\button_hide]],
+		['button_sleep'] = [[Interface\AddOns\PredatorArchy\media\button_sleep]],
+		['button_statistics'] = [[Interface\AddOns\PredatorArchy\media\button_statistics]]
+	}
 	local artifactsWidth = 300
 	local artifactsLineHeight = 28
 	local digSitesWidth = 200
@@ -18,12 +26,21 @@
 		['solving_with_keystones'] = 'Would you like to solve this artifact using your keystones?',
 		['confirm_reset'] = 'Do you really want to reset the settings?',
 		['stats'] = 'Statistics',
-		['rare'] = 'Rar',
+		['rare'] = 'rares',
 		['max_solved'] = 'Most solved',
+		['alwaysShowRareCaption'] = 'always show rares',
+		['showMinimapButtonCaption'] = 'show Minimap button',
+		['mode_caption'] = 'Mode',
 		['mode_all'] = 'All',
 		['mode_artifacts'] = 'Artifacts',
 		['mode_fragments'] = 'Fragments',
 		['mode_custom'] = 'Custom',
+		['button_show'] = 'Show',
+		['button_hide'] = 'Hide',
+		['button_sleep'] = 'Sleep',
+		['button_reset'] = 'Reset',
+		['button_toggle'] = 'Toggle',
+		['button_statistics'] = 'Statistics',
 		['tooltip_showSkill'] = 'Show skill',
 		['tooltip_openConfig'] = 'Open configuration dialogue',
 		['tooltip_show'] = 'Show PredatorArchy windows',
@@ -48,7 +65,7 @@
 		This table holds all information about the races, including their current active
 		fragment count
 	]]
-	local PredatorArchy, PredatorArchyArtifacts, PredatorArchyDigSites, PredatorArchyMenu
+	local PredatorArchy, PredatorArchyArtifacts, PredatorArchyDigSites, PredatorArchyMenu, PredatorArchyMinimapButton
 	local currentSkill = 0
 	local infoTable = {}
 	local continentRaceTable = {
@@ -72,6 +89,18 @@
 			[8] = true,		-- Trolls
 			[9] = true		-- Vrykul
 		}
+	}
+	local rareArtifactNums = {
+		[1] = 4, 
+		[2] = 2, 
+		[3] = 5,
+		[4] = 7, 
+		[5] = 2, 
+		[6] = 1, 
+		[7] = 6,
+		[8] = 3,
+		[9] = 2,
+		[10] = 0
 	}
 	local continentTable = {}
 	local raceIDNameTable = {}
@@ -275,6 +304,7 @@
 	StaticPopupDialogs['PREDATORARCHY_CONFIRM_SOLVE'] = {
 		text = texts.solving_with_keystones,
 		button1 = 'Ok',
+		button2 = 'No',
 		OnAccept = function()
 			SolveArtifact()
 		end,
@@ -292,7 +322,7 @@
 		OnAccept = function()
 			ctrl.Reset()
 		end,
-		timeout = 0,
+		timeout = 30,
 		whileDead = false,
 		hideOnEscape = false,
 	}
@@ -339,39 +369,44 @@
 		frame.tex[1] = frame:CreateTexture(nil, 'ARTWORK')
 		frame.tex[1]:SetPoint('TOPLEFT', frame, 'TOPLEFT', -1, 1)
 		frame.tex[1]:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMLEFT', 0, 0)
-		frame.tex[1]:SetTexture(solidTex)
+		frame.tex[1]:SetTexture(textures.solid)
 		frame.tex[1]:SetVertexColor(0, 0, 0, 1)
 		frame.tex[2] = frame:CreateTexture(nil, 'ARTWORK')
 		frame.tex[2]:SetPoint('TOPLEFT', frame, 'TOPLEFT', 0, 1)
 		frame.tex[2]:SetPoint('BOTTOMRIGHT', frame, 'TOPRIGHT', 1, 0)
-		frame.tex[2]:SetTexture(solidTex)
+		frame.tex[2]:SetTexture(textures.solid)
 		frame.tex[2]:SetVertexColor(0, 0, 0, 1)
 		frame.tex[3] = frame:CreateTexture(nil, 'ARTWORK')
 		frame.tex[3]:SetPoint('TOPLEFT', frame, 'TOPRIGHT', 0, 0)
 		frame.tex[3]:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 1, -1)
-		frame.tex[3]:SetTexture(solidTex)
+		frame.tex[3]:SetTexture(textures.solid)
 		frame.tex[3]:SetVertexColor(0, 0, 0, 1)
 		frame.tex[4] = frame:CreateTexture(nil, 'ARTWORK')
 		frame.tex[4]:SetPoint('TOPLEFT', frame, 'BOTTOMLEFT', -1, 0)
 		frame.tex[4]:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 0, -1)
-		frame.tex[4]:SetTexture(solidTex)
+		frame.tex[4]:SetTexture(textures.solid)
 		frame.tex[4]:SetVertexColor(0, 0, 0, 1)
 	end
 
 	--[[
 	]]
-	lib.CreateCtrlButton = function(parent)
+	lib.CreateCtrlButton = function(parent, texture, caption)
 		local tmp = CreateFrame('Button', nil, parent)
 		tmp:SetSize(18, 18)
 		tmp.tex = {}
 		tmp.tex['icon'] = tmp:CreateTexture(nil, 'OVERLAY')
 		tmp.tex['icon']:SetAllPoints(tmp)
-		tmp.tex['icon']:SetTexture(solidTex)
-		tmp.tex['icon']:SetVertexColor(1, 0, 0, 0.3)
+		tmp.tex['icon']:SetTexture(texture)
+		tmp.tex['icon']:SetVertexColor(0.7, 0.7, 0.7, 0.9)
 		lib.CreateBorder(tmp)
 		tmp:SetScript('OnLeave', function()
 			GameTooltip:Hide()
 		end)
+		--[[
+		tmp.caption = lib.CreateFontObject(tmp, 14, font)
+		tmp.caption:SetPoint('CENTER')
+		tmp.caption:SetText(caption)
+		]]
 		return tmp
 	end
 
@@ -381,13 +416,13 @@
 	lib.CreateStatusBar = function(parent)
 		local tmp = CreateFrame('StatusBar', nil, parent)
 		tmp:SetHeight(20)
-		tmp:SetStatusBarTexture(barTex)
+		tmp:SetStatusBarTexture(textures.bar)
 		tmp:SetStatusBarColor(0.7, 0, 0)
 
 		tmp.tex = {}
 		tmp.tex['back'] = tmp:CreateTexture(nil, 'BACKGROUND')
 		tmp.tex['back']:SetAllPoints(tmp)
-		tmp.tex['back']:SetTexture(barTex)
+		tmp.tex['back']:SetTexture(textures.bar)
 		tmp.tex['back']:SetVertexColor(0.3, 0.3, 0.3, 1)
 
 		tmp.text = lib.CreateFontObject(tmp, 14, font)
@@ -456,6 +491,7 @@
 			line = PredatorArchyArtifacts.Lines[lineCount]
 			if ( (line) and (
 				( core.CheckForSolvable(race) and infoTable[race].artifactFragsTotal > 0 ) or
+				( PredatorArchyOptions.alwaysShowRare and infoTable[race].artifactRarity and ( infoTable[race].artifactRarity > 0 ) ) or
 				( (PredatorArchyOptions.mode == texts.mode_custom) and PredatorArchyOptions.customMode[race] ) or
 				( (PredatorArchyOptions.mode == texts.mode_fragments) and continentRaceTable[GetCurrentMapContinent()][i] ) or
 				( (PredatorArchyOptions.mode == texts.mode_artifacts) and infoTable[race].artifactName ) or
@@ -666,10 +702,81 @@
 		SetMapByID(mapBackup)
 	end
 
+	--[[ Prints statistics about your digging
+		VOID PrintStatistics()
+	]]
+	core.PrintStatistics = function()
+		local i, j, raceName, raceCount, raceRar, curName, curRar, curCount, maxName, maxCount
+		RequestArtifactCompletionHistory()
+		maxName = ''
+		maxCount = 0
+		lib.debugging(texts.stats)
+		for i = 1, numArchRaces do
+			raceName = GetArchaeologyRaceInfo(i)
+			raceCount = 0
+			raceRar = 0
+			for j = 1, GetNumArtifactsByRace(i) do
+				curName, _, curRar, _, _, _, _, _, curCount = GetArtifactInfoByRace(i, j)
+				if ( curCount > maxCount ) then
+					maxName = curName
+					maxCount = curCount
+				end
+				if ( curRar == 1 ) then
+					raceRar = raceRar + curCount
+				end
+				raceCount = raceCount + curCount
+			end
+			if ( raceCount > 0 ) then
+				lib.debugging(raceName..': '..raceCount..' ('..raceRar..'/'..rareArtifactNums[i]..' '..texts.rare..')')
+			end
+		end
+		lib.debugging(texts.max_solved..': '..maxName..' ('..maxCount..')')
+	end
+
 
 -- *********************************************************************************
 -- ***** CONTROL FUNCTIONS *********************************************************
 -- *********************************************************************************
+
+	--[[
+	
+	]]
+	ctrl.MinimapShapes = {
+		['ROUND'] = {true, true, true, true},
+		['SQUARE'] = {false, false, false, false},
+		['CORNER-TOPLEFT'] = {true, false, false, false},
+		['CORNER-TOPRIGHT'] = {false, false, true, false},
+		['CORNER-BOTTOMLEFT'] = {false, true, false, false},
+		['CORNER-BOTTOMRIGHT'] = {false, false, false, true},
+		['SIDE-LEFT'] = {true, true, false, false},
+		['SIDE-RIGHT'] = {false, false, true, true},
+		['SIDE-TOP'] = {true, false, true, false},
+		['SIDE-BOTTOM'] = {false, true, false, true},
+		['TRICORNER-TOPLEFT'] = {true, true, true, false},
+		['TRICORNER-TOPRIGHT'] = {true, false, true, true},
+		['TRICORNER-BOTTOMLEFT'] = {true, true, false, true},
+		['TRICORNER-BOTTOMRIGHT'] = {false, true, true, true},
+	}
+
+	--[[ Updates the Position of the Minimap button
+		VOID SetMinimapButtonPos()
+	]]
+	ctrl.SetMinimapButtonPos = function()
+		local angle = math.rad(PredatorArchyOptions.minimapButtonAngle)
+		local x, y, q = math.cos(angle), math.sin(angle), 1
+		if ( x < 0 ) then q = q+1 end
+		if ( y > 0 ) then q = q+2 end
+		local shape = GetMinimapShape() or 'ROUND'
+		local quadTable = ctrl.MinimapShapes[shape]
+		if ( quadTable[q] ) then
+			x, y = x*80, y*80
+		else
+			local diagRad = 103.12308498985
+			x = math.max(-80, math.min(x*diagRad, 80))
+			y = math.max(-80, math.min(y*diagRad, 80))
+		end
+		PredatorArchyMinimapButton:SetPoint('CENTER', Minimap, 'CENTER', x, y)
+	end
 
 	--[[ Shows the frames and registers the events
 		VOID Show()
@@ -748,6 +855,17 @@
 		PredatorArchyDigSites:SetPoint(PredatorArchyOptions['PredatorArchyDigSites'].point, UIParent, PredatorArchyOptions['PredatorArchyDigSites'].relPoint, PredatorArchyOptions['PredatorArchyDigSites'].x, PredatorArchyOptions['PredatorArchyDigSites'].y)
 	end
 
+	--[[ Toggles the windows between Show() and Sleep()
+		VOID Toggle()
+	]]
+	ctrl.Toggle = function()
+		if ( PredatorArchyOptions.state ) then
+			ctrl.Sleep()
+		else
+			ctrl.Show()
+		end
+	end
+
 	--[[ Controls what happens while using a slash-command
 		VOID SlashCmdHandler(STRING msg, EDITBOX editbox)
 		Remember that the SlashCmds are '/predatorarchy' and '/pa'
@@ -763,6 +881,8 @@
 		elseif ( cmd == 'sleep' ) then
 			lib.debugging('Is now sleeping...')
 			ctrl.Sleep()
+		elseif ( cmd == 'toggle' ) then
+			ctrl.Toggle()
 		elseif ( cmd == 'reset' ) then
 			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
 		else
@@ -771,6 +891,17 @@
 			lib.debugging('  hide - hides the windows')
 			lib.debugging('  sleep - sends the addon to sleep and hides the windows')
 			lib.debugging('  reset - resets the settings')
+		end
+	end
+
+	--[[
+	
+	]]
+	ctrl.MinimapButtonHandler = function(frame, button)
+		if ( button == 'LeftButton' ) then
+			ctrl.Toggle()
+		elseif ( button == 'RightButton' ) then
+			ToggleDropDownMenu(1, nil, frame.DropDown, frame, 0, -5)
 		end
 	end
 
@@ -860,6 +991,15 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		if ( not PredatorArchyOptions.customMode ) then
 			PredatorArchyOptions.customMode = {}
 		end
+		if ( not PredatorArchyOptions.alwaysShowRare ) then
+			PredatorArchyOptions.alwaysShowRare = (PredatorArchyOptions.alwaysShowRare and true) or false
+		end
+		if ( not PredatorArchyOptions.showMinimapButton ) then
+			PredatorArchyOptions.showMinimapButton = (PredatorArchyOptions.showMinimapButton and true) or false
+		end
+		if ( not PredatorArchyOptions.minimapButtonAngle ) then
+			PredatorArchyOptions.minimapButtonAngle = 45
+		end
 		if ( not PredatorArchyOptions.PredatorArchyArtifacts ) then
 			PredatorArchyOptions.PredatorArchyArtifacts = {
 				['point'] = 'CENTER', 
@@ -884,8 +1024,8 @@ loader:SetScript('OnEvent', function(self, event, addon)
 	if ( not PredatorArchyArtifacts ) then
 		PredatorArchyArtifacts = CreateFrame('Frame', 'PredatorArchyArtifacts', UIParent)
 		PredatorArchyArtifacts:SetBackdrop( {
-			bgFile = solidTex,
-			edgeFile = borderTex,
+			bgFile = textures.solid,
+			edgeFile = textures.border,
 			tile = false,
 			edgeSize = 8,
 			insets = { left = 4, right = 4, top = 4, bottom = 4 }
@@ -929,7 +1069,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		PredatorArchyArtifacts.Ctrl:SetPoint('TOPLEFT', PredatorArchyArtifacts.Skill, 'TOPLEFT', 0, -1)
 		PredatorArchyArtifacts.Ctrl:SetPoint('BOTTOMRIGHT', PredatorArchyArtifacts.Skill)
 
-		PredatorArchyArtifacts.Ctrl.ShowSkillButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.ShowSkillButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl, textures.button_back, '<')
 		PredatorArchyArtifacts.Ctrl.ShowSkillButton:SetPoint('TOPLEFT')
 		PredatorArchyArtifacts.Ctrl.ShowSkillButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -941,7 +1081,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			PredatorArchyArtifacts.Skill:Show()
 		end)
 
-		PredatorArchyArtifacts.Ctrl.OpenConfigButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.OpenConfigButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl, textures.button_config, 'C')
 		PredatorArchyArtifacts.Ctrl.OpenConfigButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.ShowSkillButton, 'TOPRIGHT', 15, 0)
 		PredatorArchyArtifacts.Ctrl.OpenConfigButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -952,7 +1092,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			InterfaceOptionsFrame_OpenToCategory(PredatorArchyMenu)
 		end)
 
-		PredatorArchyArtifacts.Ctrl.HideButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.HideButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl, textures.button_hide, '-')
 		PredatorArchyArtifacts.Ctrl.HideButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.OpenConfigButton, 'TOPRIGHT', 5, 0)
 		PredatorArchyArtifacts.Ctrl.HideButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -961,7 +1101,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		end)
 		PredatorArchyArtifacts.Ctrl.HideButton:SetScript('OnClick', ctrl.Hide)
 
-		PredatorArchyArtifacts.Ctrl.SleepButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.SleepButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl, textures.button_sleep, '_')
 		PredatorArchyArtifacts.Ctrl.SleepButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.HideButton, 'TOPRIGHT', 5, 0)
 		PredatorArchyArtifacts.Ctrl.SleepButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -970,40 +1110,14 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		end)
 		PredatorArchyArtifacts.Ctrl.SleepButton:SetScript('OnClick', ctrl.Sleep)
 
-		PredatorArchyArtifacts.Ctrl.StatisticsButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl)
+		PredatorArchyArtifacts.Ctrl.StatisticsButton = lib.CreateCtrlButton(PredatorArchyArtifacts.Ctrl, textures.button_statistics, 'S')
 		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetPoint('TOPLEFT', PredatorArchyArtifacts.Ctrl.SleepButton, 'TOPRIGHT', 15, 0)
 		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
 			GameTooltip:AddLine(texts.tooltip_statistics)
 			GameTooltip:Show()
 		end)
-		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetScript('OnClick', function()
-			local i, j, raceName, raceCount, raceRar, curName, curRar, curCount, maxName, maxCount
-			RequestArtifactCompletionHistory()
-			maxName = ''
-			maxCount = 0
-			lib.debugging(texts.stats)
-			for i = 1, numArchRaces do
-				raceName = GetArchaeologyRaceInfo(i)
-				raceCount = 0
-				raceRar = 0
-				for j = 1, GetNumArtifactsByRace(i) do
-					curName, _, curRar, _, _, _, _, _, curCount = GetArtifactInfoByRace(i, j)
-					if ( curCount > maxCount ) then
-						maxName = curName
-						maxCount = curCount
-					end
-					if ( curRar == 1 ) then
-						raceRar = raceRar + curCount
-					end
-					raceCount = raceCount + curCount
-				end
-				if ( raceCount > 1 ) then
-					lib.debugging(raceName..': '..raceCount..' ('..raceRar..' '..texts.rare..')')
-				end
-			end
-			lib.debugging(texts.max_solved..': '..maxName..' ('..maxCount..')')
-		end)
+		PredatorArchyArtifacts.Ctrl.StatisticsButton:SetScript('OnClick', core.PrintStatistics)
 
 		PredatorArchyArtifacts.Ctrl:Hide()
 
@@ -1077,8 +1191,8 @@ loader:SetScript('OnEvent', function(self, event, addon)
 	if ( not PredatorArchyDigSites ) then
 		PredatorArchyDigSites = CreateFrame('Frame', 'PredatorArchyDigSites', UIParent)
 		PredatorArchyDigSites:SetBackdrop( {
-			bgFile = solidTex,
-			edgeFile = borderTex,
+			bgFile = textures.solid,
+			edgeFile = textures.border,
 			tile = false,
 			edgeSize = 8,
 			insets = { left = 4, right = 4, top = 4, bottom = 4 }
@@ -1145,7 +1259,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		tmp.title:SetText('PredatorArchy')
 
 		tmp.ShowButton = CreateFrame('Button', 'PredatorArchyMenuShowButton', tmp, 'OptionsButtonTemplate')
-		tmp.ShowButton:SetText('Show')
+		tmp.ShowButton:SetText(texts.button_show)
 		tmp.ShowButton:SetPoint('TOPLEFT', tmp.title, 'BOTTOMLEFT', 0, -20)
 		tmp.ShowButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -1158,7 +1272,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		tmp.ShowButton:SetScript('OnClick', ctrl.Show)
 
 		tmp.HideButton = CreateFrame('Button', 'PredatorArchyMenuHideButton', tmp, 'OptionsButtonTemplate')
-		tmp.HideButton:SetText('Hide')
+		tmp.HideButton:SetText(texts.button_hide)
 		tmp.HideButton:SetPoint('TOPLEFT', tmp.ShowButton, 'TOPRIGHT', 5, 0)
 		tmp.HideButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -1171,7 +1285,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		tmp.HideButton:SetScript('OnClick', ctrl.Hide)
 
 		tmp.SleepButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
-		tmp.SleepButton:SetText('Sleep')
+		tmp.SleepButton:SetText(texts.button_sleep)
 		tmp.SleepButton:SetPoint('TOPLEFT', tmp.HideButton, 'TOPRIGHT', 5, 0)
 		tmp.SleepButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -1184,7 +1298,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		tmp.SleepButton:SetScript('OnClick', ctrl.Sleep)
 
 		tmp.ResetButton = CreateFrame('Button', 'PredatorArchyMenuSleepButton', tmp, 'OptionsButtonTemplate')
-		tmp.ResetButton:SetText('Reset')
+		tmp.ResetButton:SetText(texts.button_reset)
 		tmp.ResetButton:SetPoint('TOPLEFT', tmp.SleepButton, 'TOPRIGHT', 5, 0)
 		tmp.ResetButton:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_CURSOR')
@@ -1198,8 +1312,31 @@ loader:SetScript('OnEvent', function(self, event, addon)
 			StaticPopup_Show('PREDATORARCHY_CONFIRM_RESET')
 		end)
 
+		tmp.AlwaysShowRare = CreateFrame('CheckButton', 'PredatorArchyMenuAlwaysShowRareCheckbox', tmp, 'InterfaceOptionsCheckButtonTemplate')
+		_G['PredatorArchyMenuAlwaysShowRareCheckboxText']:SetText(texts.alwaysShowRareCaption)
+		tmp.AlwaysShowRare:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 0, -30)
+		tmp.AlwaysShowRare:SetScript('OnClick', function(self)
+			self:SetChecked((self:GetChecked() and true) or false)
+			PredatorArchyOptions.alwaysShowRare = (self:GetChecked() and true or false)
+			core.UpdateArtifactWindow()
+		end)
+
+		tmp.ShowMinimapButton = CreateFrame('CheckButton', 'PredatorArchyMenuShowMinimapButtonCheckbox', tmp, 'InterfaceOptionsCheckButtonTemplate')
+		_G['PredatorArchyMenuShowMinimapButtonCheckboxText']:SetText(texts.showMinimapButtonCaption)
+		tmp.ShowMinimapButton:SetPoint('TOPLEFT', tmp.SleepButton, 'BOTTOMLEFT', 0, -30)
+		tmp.ShowMinimapButton:SetScript('OnClick', function(self)
+			self:SetChecked((self:GetChecked() and true) or false)
+			PredatorArchyOptions.showMinimapButton = (self:GetChecked() and true or false)
+			if ( self:GetChecked() ) then
+				PredatorArchyMinimapButton:Show()
+				ctrl.SetMinimapButtonPos()
+			else
+				PredatorArchyMinimapButton:Hide()
+			end
+		end)
+
 		tmp.ModeDropDown = CreateFrame('Button', 'PredatorArchyMenuModeDropDown', tmp, 'UIDropDownMenuTemplate')
-		tmp.ModeDropDown:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 0, -50)
+		tmp.ModeDropDown:SetPoint('TOPLEFT', tmp.ShowButton, 'BOTTOMLEFT', 50, -100)
 		tmp.ModeDropDown:SetScript('OnShow', function(self)
 			UIDropDownMenu_Initialize(self, function()
 				local info = {}
@@ -1209,6 +1346,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 				info.func = function()
 					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_all)
 					PredatorArchyOptions.mode = texts.mode_all
+					PredatorArchyMenu.CustomMode:Hide()
 					core.UpdateArtifactWindow()
 				end
 				UIDropDownMenu_AddButton(info)
@@ -1217,6 +1355,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 				info.func = function()
 					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_artifacts)
 					PredatorArchyOptions.mode = texts.mode_artifacts
+					PredatorArchyMenu.CustomMode:Hide()
 					core.UpdateArtifactWindow()
 				end
 				UIDropDownMenu_AddButton(info)
@@ -1225,6 +1364,7 @@ loader:SetScript('OnEvent', function(self, event, addon)
 				info.func = function()
 					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_fragments)
 					PredatorArchyOptions.mode = texts.mode_fragments
+					PredatorArchyMenu.CustomMode:Hide()
 					core.UpdateArtifactWindow()
 				end
 				UIDropDownMenu_AddButton(info)
@@ -1233,11 +1373,17 @@ loader:SetScript('OnEvent', function(self, event, addon)
 				info.func = function()
 					_G['PredatorArchyMenuModeDropDownText']:SetText(texts.mode_custom)
 					PredatorArchyOptions.mode = texts.mode_custom
+					PredatorArchyMenu.CustomMode:Show()
 					core.UpdateArtifactWindow()
 				end
 				UIDropDownMenu_AddButton(info)
 			end)
 		end)
+
+		tmp.ModeCaption = tmp:CreateFontString(nil, 'ARTWORK', 'GameFontHighlight')
+		tmp.ModeCaption:SetText(texts.mode_caption)
+		tmp.ModeCaption:SetPoint('LEFT', tmp.ShowButton, 'LEFT', 10, 0)
+		tmp.ModeCaption:SetPoint('TOP', tmp.ModeDropDown, 'TOP', 0, -10)
 
 		tmp.CustomMode = CreateFrame('Frame', nil, tmp)
 		tmp.CustomMode:SetPoint('LEFT', tmp.ShowButton, 'LEFT', 10, 0)
@@ -1265,15 +1411,107 @@ loader:SetScript('OnEvent', function(self, event, addon)
 		tmp:SetScript('OnShow', function()
 			local raceName
 			_G['PredatorArchyMenuModeDropDownText']:SetText(PredatorArchyOptions.mode)
+			_G['PredatorArchyMenuAlwaysShowRareCheckbox']:SetChecked(PredatorArchyOptions.alwaysShowRare and true or false)
+			_G['PredatorArchyMenuShowMinimapButtonCheckbox']:SetChecked(PredatorArchyOptions.showMinimapButton and true or false)
 			for i = 1, numArchRaces do
 				raceName = GetArchaeologyRaceInfo(i)
 				_G['PredatorArchyMenuRace'..i..'CheckboxText']:SetText(raceName)
 				_G['PredatorArchyMenuRace'..i..'Checkbox']:SetChecked(PredatorArchyOptions.customMode[raceName] and true or false)
 			end
+			if ( PredatorArchyOptions.mode == texts.mode_custom ) then
+				PredatorArchyMenu.CustomMode:Show()
+			else
+				PredatorArchyMenu.CustomMode:Hide()
+			end
 		end)
 
 		PredatorArchyMenu = tmp
 		InterfaceOptions_AddCategory(PredatorArchyMenu)
+	end
+
+	--[[
+		MINIMAP BUTTON
+	]]
+	do
+		tmp = CreateFrame('Button', 'PredatorArchyMinimapButton', _G['Minimap'])
+		tmp:SetSize(32, 32)
+		tmp:SetFrameStrata(_G['Minimap']:GetFrameStrata())
+		tmp:SetFrameLevel(_G['Minimap']:GetFrameLevel()+5)
+
+		tmp.background = tmp:CreateTexture(nil, 'BACKGROUND')
+		tmp.background:SetSize(21, 21)
+		tmp.background:SetPoint('TOPLEFT', 7, -6)
+		tmp.background:SetTexture(textures.minimap)
+
+		tmp.border = tmp:CreateTexture(nil, 'OVERLAY')
+		tmp.border:SetSize(56, 56)
+		tmp.border:SetPoint('TOPLEFT')
+		tmp.border:SetTexture('Interface\\Minimap\\MiniMap-TrackingBorder')
+
+		tmp:SetHighlightTexture('Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight')
+
+		tmp.DropDown = CreateFrame('Frame', nil, tmp, 'UIDropDownMenuTemplate')
+		tmp.DropDown:SetClampedToScreen(true)
+		tmp.DropDown:Hide()
+		UIDropDownMenu_Initialize(tmp.DropDown, function()
+			local info = {}
+			info.notCheckable = true
+
+			info.text = texts.button_toggle
+			info.func = ctrl.Toggle
+			UIDropDownMenu_AddButton(info)
+
+			info.text = texts.button_show
+			info.func = ctrl.Show
+			UIDropDownMenu_AddButton(info)
+
+			info.text = texts.button_hide
+			info.func = ctrl.Hide
+			UIDropDownMenu_AddButton(info)
+
+			info.text = texts.button_sleep
+			info.func = ctrl.Sleep
+			UIDropDownMenu_AddButton(info)
+
+			info.text = texts.button_statistics
+			info.func = core.PrintStatistics
+			UIDropDownMenu_AddButton(info)
+		end)
+
+		tmp.DragFrame = CreateFrame('Frame', nil, tmp)
+		tmp.DragFrame:Hide()
+		tmp.DragFrame:SetScript('OnUpdate', function(self)
+			local mx, my = _G['Minimap']:GetCenter()
+			local cx, cy = GetCursorPosition()
+			local scale = _G['Minimap']:GetEffectiveScale()
+			cx = cx / scale
+			cy = cy / scale
+			PredatorArchyOptions.minimapButtonAngle = math.deg(math.atan2(cy-my, cx-mx))%360
+			ctrl.SetMinimapButtonPos()
+		end)
+
+		tmp:RegisterForClicks('anyUp')
+		tmp:RegisterForDrag('LeftButton')
+		tmp:SetScript('OnClick', ctrl.MinimapButtonHandler)
+		tmp:SetScript('OnDragStart', function(self)
+			if ( IsAltKeyDown() ) then
+				self:LockHighlight()
+				self.DragFrame:Show()
+			end
+		end)
+		tmp:SetScript('OnDragStop', function(self)
+			self:UnlockHighlight()
+			self.DragFrame:Hide()
+		end)
+
+		PredatorArchyMinimapButton = tmp
+
+		if ( PredatorArchyOptions.showMinimapButton ) then
+			PredatorArchyMinimapButton:Show()
+			ctrl.SetMinimapButtonPos()
+		else
+			PredatorArchyMinimapButton:Hide()
+		end
 	end
 
 	SLASH_PREDATORARCHY1, SLASH_PREDATORARCHY2 = '/predatorarchy', '/pa'
